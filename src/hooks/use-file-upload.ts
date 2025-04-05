@@ -45,21 +45,70 @@ export const useFileUpload = () => {
     if (validFiles.length !== newFiles.length) {
       toast({
         title: "Unsupported file type",
-        description: "Only PDF, Excel, CSV, and JSON files are supported.",
+        description: "Only PDF, Excel, CSV, JSON, images and document files are supported.",
         variant: "destructive",
       });
     }
     
-    const filesWithPreview = validFiles.map(file => {
-      if (file.type.startsWith("image/")) {
-        return Object.assign(file, {
-          preview: URL.createObjectURL(file)
-        });
-      }
-      return file;
+    // Check file size limits
+    const fileSizeLimits = {
+      "application/pdf": 50,
+      "image/png": 10,
+      "image/jpeg": 10,
+      "text/csv": 10,
+      "application/vnd.ms-excel": 10,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": 20,
+      "image/tiff": 20,
+      "text/plain": 5,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": 10
+    };
+
+    const invalidSizeFiles = validFiles.filter(file => {
+      const sizeLimit = fileSizeLimits[file.type as keyof typeof fileSizeLimits];
+      if (!sizeLimit) return false;
+      
+      const fileSizeMB = file.size / (1024 * 1024);
+      return fileSizeMB > sizeLimit;
     });
-    
-    setFiles(prev => [...prev, ...filesWithPreview]);
+
+    if (invalidSizeFiles.length > 0) {
+      toast({
+        title: "File size exceeds limit",
+        description: `Some files exceed the size limit: ${invalidSizeFiles.map(f => f.name).join(', ')}`,
+        variant: "destructive",
+      });
+      
+      // Filter out invalid size files
+      const validSizeFiles = validFiles.filter(file => {
+        const sizeLimit = fileSizeLimits[file.type as keyof typeof fileSizeLimits];
+        if (!sizeLimit) return true;
+        
+        const fileSizeMB = file.size / (1024 * 1024);
+        return fileSizeMB <= sizeLimit;
+      });
+
+      const filesWithPreview = validSizeFiles.map(file => {
+        if (file.type.startsWith("image/")) {
+          return Object.assign(file, {
+            preview: URL.createObjectURL(file)
+          });
+        }
+        return file;
+      });
+      
+      setFiles(prev => [...prev, ...filesWithPreview]);
+    } else {
+      const filesWithPreview = validFiles.map(file => {
+        if (file.type.startsWith("image/")) {
+          return Object.assign(file, {
+            preview: URL.createObjectURL(file)
+          });
+        }
+        return file;
+      });
+      
+      setFiles(prev => [...prev, ...filesWithPreview]);
+    }
   };
 
   const removeFile = (index: number) => {
@@ -94,7 +143,7 @@ export const useFileUpload = () => {
             throw new Error("File upload did not return file data");
           }
           
-          // Process the file with our edge function
+          // Process the file with our document processor
           await processFile(fileData.id);
           
           // Update progress

@@ -47,37 +47,87 @@ export type Database = {
           },
         ]
       }
+      extracted_entities: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          entity_type: string
+          entity_value: string
+          file_id: string | null
+          id: string
+          page_number: number | null
+          position_data: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          entity_type: string
+          entity_value: string
+          file_id?: string | null
+          id?: string
+          page_number?: number | null
+          position_data?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          entity_type?: string
+          entity_value?: string
+          file_id?: string | null
+          id?: string
+          page_number?: number | null
+          position_data?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extracted_entities_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "file_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_uploads: {
         Row: {
           created_at: string | null
+          detected_language: string | null
           file_name: string
           file_size: number
           file_type: string
           id: string
           ocr_required: boolean
           original_path: string
+          processing_metadata: Json | null
           status: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          detected_language?: string | null
           file_name: string
           file_size: number
           file_type: string
           id?: string
           ocr_required?: boolean
           original_path: string
+          processing_metadata?: Json | null
           status?: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          detected_language?: string | null
           file_name?: string
           file_size?: number
           file_type?: string
           id?: string
           ocr_required?: boolean
           original_path?: string
+          processing_metadata?: Json | null
           status?: string
           updated_at?: string | null
         }

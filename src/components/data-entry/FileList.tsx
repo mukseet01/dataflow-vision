@@ -1,7 +1,7 @@
 
 import { XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FileWithPreview, getFileIcon } from "@/utils/fileUtils";
+import { FileWithPreview, getFileIcon, getFileTypeLabel } from "@/utils/fileUtils";
 
 interface FileListProps {
   files: FileWithPreview[];
@@ -24,9 +24,11 @@ const FileList = ({ files, onRemoveFile }: FileListProps) => {
               <span className="mr-2 text-lg">{getFileIcon(file)}</span>
               <div>
                 <p className="font-medium truncate max-w-[240px]">{file.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(1)} KB
-                </p>
+                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                  <span>{getFileTypeLabel(file)}</span>
+                  <span>•</span>
+                  <span>{(file.size / 1024).toFixed(1)} KB</span>
+                </div>
               </div>
             </div>
             <Button

@@ -18,6 +18,10 @@ export async function uploadFile(file: File) {
       .from("uploads")
       .getPublicUrl(filename);
 
+    // Determine if OCR is required
+    const requiresOcr = file.type === "application/pdf" || 
+                        file.type.startsWith("image/");
+                        
     // Save file metadata to database
     const { data: fileData, error: fileError } = await supabase
       .from('file_uploads')
@@ -26,7 +30,7 @@ export async function uploadFile(file: File) {
         file_type: file.type,
         file_size: file.size,
         original_path: publicUrl,
-        ocr_required: file.type === "application/pdf",
+        ocr_required: requiresOcr,
       })
       .select()
       .single();
@@ -44,8 +48,12 @@ export async function uploadFile(file: File) {
 
 export async function processFile(fileId: string) {
   try {
-    const { error } = await supabase.functions.invoke('process-document', {
-      body: { fileId }
+    // Call our document processor edge function
+    const { error } = await supabase.functions.invoke('document-processor', {
+      body: { 
+        action: 'process',
+        fileId 
+      }
     });
     
     if (error) throw new Error(error.message);

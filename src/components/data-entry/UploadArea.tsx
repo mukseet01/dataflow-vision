@@ -43,7 +43,7 @@ const UploadArea = ({
         id="file-upload"
         type="file"
         multiple
-        accept=".pdf,.xlsx,.xls,.csv,.json"
+        accept=".pdf,.xlsx,.xls,.csv,.json,.png,.jpg,.jpeg,.tiff,.txt,.docx"
         className="hidden"
         onChange={onFileChange}
       />
