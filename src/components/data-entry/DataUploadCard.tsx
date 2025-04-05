@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { FileUpIcon, PlusIcon, SparklesIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface FileWithPreview extends File {
   preview?: string;
@@ -15,6 +17,7 @@ const DataUploadCard = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -53,6 +56,14 @@ const DataUploadCard = () => {
       file.type === "application/json"
     );
     
+    if (validFiles.length !== newFiles.length) {
+      toast({
+        title: "Unsupported file type",
+        description: "Only PDF, Excel, CSV, and JSON files are supported.",
+        variant: "destructive",
+      });
+    }
+    
     const filesWithPreview = validFiles.map(file => {
       if (file.type.startsWith("image/")) {
         return Object.assign(file, {
@@ -77,27 +88,114 @@ const DataUploadCard = () => {
     });
   };
 
-  const processFiles = () => {
+  const uploadFile = async (file: File) => {
+    try {
+      // Upload file to Supabase Storage
+      const filename = `${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("uploads")
+        .upload(filename, file);
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("uploads")
+        .getPublicUrl(filename);
+
+      // Save file metadata to database
+      const { data: fileData, error: fileError } = await supabase
+        .from("file_uploads")
+        .insert({
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          original_path: publicUrl,
+          ocr_required: file.type === "application/pdf",
+        })
+        .select()
+        .single();
+
+      if (fileError) {
+        throw new Error(fileError.message);
+      }
+
+      return fileData;
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      throw error;
+    }
+  };
+
+  const processFiles = async () => {
     if (files.length === 0) return;
     
     setIsProcessing(true);
     setProgress(0);
     
-    // Simulate processing
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + 5;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsProcessing(false);
-            setFiles([]);
-          }, 500);
-          return 100;
+    try {
+      // Calculate progress increment per file
+      const progressIncrement = 100 / files.length;
+      
+      // Upload all files to Supabase
+      const uploadPromises = files.map(async (file, index) => {
+        try {
+          // Upload file and get metadata
+          const fileData = await uploadFile(file);
+          
+          // Process the file with our edge function
+          const { error } = await supabase.functions.invoke('process-document', {
+            body: { fileId: fileData.id }
+          });
+          
+          if (error) throw new Error(error.message);
+          
+          // Update progress
+          setProgress(prev => Math.min(prev + progressIncrement, 100));
+          
+          return fileData;
+        } catch (error) {
+          console.error(`Error processing file ${file.name}:`, error);
+          toast({
+            title: "Processing Error",
+            description: `Failed to process ${file.name}. ${error.message}`,
+            variant: "destructive",
+          });
+          
+          // Still update progress even on error
+          setProgress(prev => Math.min(prev + progressIncrement, 100));
+          return null;
         }
-        return newProgress;
       });
-    }, 150);
+      
+      // Wait for all uploads and processing to complete
+      const results = await Promise.all(uploadPromises);
+      const successfulUploads = results.filter(Boolean);
+      
+      if (successfulUploads.length > 0) {
+        toast({
+          title: "Processing Complete",
+          description: `Successfully processed ${successfulUploads.length} of ${files.length} files.`,
+        });
+      }
+      
+      // Wait a moment before resetting UI
+      setTimeout(() => {
+        setFiles([]);
+        setIsProcessing(false);
+      }, 500);
+      
+    } catch (error) {
+      console.error("Error during file processing:", error);
+      toast({
+        title: "Processing Failed",
+        description: `An unexpected error occurred. ${error.message}`,
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    }
   };
 
   const getFileIcon = (file: File) => {
@@ -125,7 +223,7 @@ const DataUploadCard = () => {
                 Our AI is extracting and processing data from your files
               </p>
               <Progress value={progress} className="h-2 w-full" />
-              <p className="text-xs text-muted-foreground mt-2">{progress}% complete</p>
+              <p className="text-xs text-muted-foreground mt-2">{Math.round(progress)}% complete</p>
             </div>
           </div>
         ) : (
@@ -198,7 +296,11 @@ const DataUploadCard = () => {
         )}
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="ghost" disabled={files.length === 0 || isProcessing}>
+        <Button 
+          variant="ghost" 
+          disabled={files.length === 0 || isProcessing}
+          onClick={() => setFiles([])}
+        >
           Cancel
         </Button>
         <Button 
