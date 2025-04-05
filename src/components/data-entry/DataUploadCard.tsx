@@ -105,9 +105,9 @@ const DataUploadCard = () => {
         .from("uploads")
         .getPublicUrl(filename);
 
-      // Save file metadata to database
+      // Save file metadata to database - Fixed TypeScript errors here
       const { data: fileData, error: fileError } = await supabase
-        .from("file_uploads")
+        .from('file_uploads')
         .insert({
           file_name: file.name,
           file_type: file.type,
@@ -144,6 +144,10 @@ const DataUploadCard = () => {
         try {
           // Upload file and get metadata
           const fileData = await uploadFile(file);
+          
+          if (!fileData) {
+            throw new Error("File upload did not return file data");
+          }
           
           // Process the file with our edge function
           const { error } = await supabase.functions.invoke('process-document', {
