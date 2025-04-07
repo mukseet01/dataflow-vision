@@ -1,15 +1,20 @@
 
 import os
 import tempfile
+import shutil
+from typing import List
 
-# Create temporary directory for file processing
-TEMP_DIR = tempfile.mkdtemp()
+# Create a temporary directory for file operations
+TEMP_DIR = tempfile.mkdtemp(prefix="document_processor_")
 
-def cleanup_files(file_paths):
-    """Clean up temporary files after processing."""
+def cleanup_files(file_paths: List[str]) -> None:
+    """Clean up temporary files."""
     for file_path in file_paths:
         try:
             if os.path.exists(file_path):
-                os.remove(file_path)
+                if os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+                else:
+                    os.remove(file_path)
         except Exception as e:
-            print(f"Error removing file {file_path}: {str(e)}")
+            print(f"Error cleaning up {file_path}: {str(e)}")

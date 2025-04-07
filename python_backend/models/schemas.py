@@ -35,3 +35,21 @@ class ProcessingResponse(BaseModel):
     data_frame: Optional[DataFrameOutput] = None
     metadata: Optional[Dict[str, Any]] = None
     temp_files: List[str] = []
+
+# New schemas for data analysis
+class AnalysisRequest(BaseModel):
+    request_id: str
+    file_url: str
+    file_name: str
+    file_type: str
+    prompt: str
+    api_key: Optional[str] = None
+
+class AnalysisResponse(BaseModel):
+    request_id: str
+    analysis_result: str
+    data_summary: Dict[str, Any]
+    preview: Dict[str, Any]
+    visualization: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    temp_files: List[str] = []

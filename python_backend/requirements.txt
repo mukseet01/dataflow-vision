@@ -13,3 +13,7 @@ python-multipart>=0.0.5
 pymupdf>=1.19.0
 langdetect>=1.0.9
 openpyxl>=3.0.10
+pandasai>=1.0.0
+matplotlib>=3.5.0
+scikit-learn>=1.0.0
+openai>=1.0.0
