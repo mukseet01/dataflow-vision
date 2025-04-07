@@ -49,7 +49,7 @@ export async function createAnalysisRequest(request: AnalysisRequest) {
       requestId: requestData.id,
       ...analysisData
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing data:", error);
     toast.error(`Analysis failed: ${error.message}`);
     throw error;
@@ -58,6 +58,7 @@ export async function createAnalysisRequest(request: AnalysisRequest) {
 
 export async function getAnalysisRequests() {
   try {
+    // @ts-ignore - The table exists in the database but TypeScript doesn't know about it yet
     const { data, error } = await supabase
       .from('analysis_requests')
       .select('*, file_uploads(*)')
@@ -68,7 +69,7 @@ export async function getAnalysisRequests() {
     }
     
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching analysis requests:", error);
     toast.error(`Failed to load analysis history: ${error.message}`);
     throw error;
@@ -77,6 +78,7 @@ export async function getAnalysisRequests() {
 
 export async function getAnalysisById(id: string) {
   try {
+    // @ts-ignore - The table exists in the database but TypeScript doesn't know about it yet
     const { data, error } = await supabase
       .from('analysis_requests')
       .select('*, file_uploads(*)')
@@ -88,7 +90,7 @@ export async function getAnalysisById(id: string) {
     }
     
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error fetching analysis with ID ${id}:`, error);
     toast.error(`Failed to load analysis: ${error.message}`);
     throw error;

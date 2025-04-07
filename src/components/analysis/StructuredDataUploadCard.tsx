@@ -26,8 +26,7 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
     handleFileChange,
     removeFile,
     processFiles,
-    resetFiles,
-    uploadedFiles
+    resetFiles
   } = useFileUpload();
   
   // Filter accepted file types based on selection
@@ -46,9 +45,9 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
   
   const handleProcess = async () => {
     try {
-      await processFiles();
+      const uploadedFiles = await processFiles();
       
-      if (uploadedFiles.length > 0 && onFileUploaded) {
+      if (uploadedFiles && uploadedFiles.length > 0 && onFileUploaded) {
         onFileUploaded(uploadedFiles[0]);
         toast.success(`File uploaded successfully: ${uploadedFiles[0].file_name}`);
       }

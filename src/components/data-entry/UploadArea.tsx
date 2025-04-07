@@ -12,6 +12,7 @@ interface UploadAreaProps {
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: (index: number) => void;
+  acceptedFileTypes?: string;
 }
 
 const UploadArea = ({
@@ -21,7 +22,8 @@ const UploadArea = ({
   onDragLeave,
   onDrop,
   onFileChange,
-  onRemoveFile
+  onRemoveFile,
+  acceptedFileTypes = ".pdf,.xlsx,.xls,.csv,.json,.png,.jpg,.jpeg,.tiff,.txt,.docx"
 }: UploadAreaProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -43,7 +45,7 @@ const UploadArea = ({
         id="file-upload"
         type="file"
         multiple
-        accept=".pdf,.xlsx,.xls,.csv,.json,.png,.jpg,.jpeg,.tiff,.txt,.docx"
+        accept={acceptedFileTypes}
         className="hidden"
         onChange={onFileChange}
       />
