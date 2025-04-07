@@ -2,24 +2,30 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SparklesIcon, FileSpreadsheet, FileBarChart2, Database } from "lucide-react";
-import { useFileUpload } from "@/hooks/use-file-upload";
-import UploadArea from "@/components/data-entry/UploadArea";
-import ProcessingProgress from "@/components/data-entry/ProcessingProgress";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { FileSpreadsheet, Upload, AlertCircle } from "lucide-react";
+import useFileUpload from "@/hooks/use-file-upload";
+import UploadArea from "@/components/data-entry/UploadArea";
+
+const FILE_TYPES = {
+  SPREADSHEETS: {
+    label: "Spreadsheets",
+    formats: ".csv,.xlsx,.xls",
+    icon: <FileSpreadsheet className="h-5 w-5" />
+  }
+};
 
 interface StructuredDataUploadCardProps {
-  onFileUploaded?: (fileData: any) => void;
+  onFileUploaded: (fileData: any) => void;
 }
 
 const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardProps) => {
-  const [fileType, setFileType] = useState<string>("excel");
+  const [selectedType, setSelectedType] = useState<string>("SPREADSHEETS");
   
   const {
     files,
     isDragging,
-    isProcessing,
-    progress,
     handleDragOver,
     handleDragLeave,
     handleDrop,
@@ -30,17 +36,15 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
   } = useFileUpload();
   
   // Filter accepted file types based on selection
-  const getAcceptedTypes = () => {
-    switch (fileType) {
-      case "excel":
-        return ".xlsx,.xls,.csv";
-      case "json":
-        return ".json";
-      case "database":
-        return ".sqlite,.db";
-      default:
-        return ".xlsx,.xls,.csv,.json,.sqlite,.db";
+  const acceptedFileTypes = FILE_TYPES[selectedType as keyof typeof FILE_TYPES]?.formats || "";
+  
+  const isUploadButtonDisabled = files.length === 0;
+  
+  const handleTypeSelection = (type: string) => {
+    if (files.length > 0) {
+      resetFiles();
     }
+    setSelectedType(type);
   };
   
   const handleProcess = async () => {
@@ -52,81 +56,73 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
         toast.success(`File uploaded successfully: ${uploadedFiles[0].file_name}`);
       }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Failed to upload file");
+      console.error("Error processing files:", error);
+      toast.error("Failed to process files. Please try again.");
     }
   };
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle>Upload Data for Analysis</CardTitle>
+        <div className="flex items-center gap-2">
+          <FileSpreadsheet className="h-5 w-5" />
+          <CardTitle>Data Source</CardTitle>
+        </div>
         <CardDescription>
-          Upload structured data files for AI-powered analysis
+          Upload a structured data file for analysis
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Button
-            type="button"
-            variant={fileType === "excel" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFileType("excel")}
-            className="flex items-center"
-          >
-            <FileSpreadsheet className="h-4 w-4 mr-1" />
-            Excel/CSV
-          </Button>
-          <Button
-            type="button"
-            variant={fileType === "json" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFileType("json")}
-            className="flex items-center"
-          >
-            <FileBarChart2 className="h-4 w-4 mr-1" />
-            JSON
-          </Button>
-          <Button
-            type="button"
-            variant={fileType === "database" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFileType("database")}
-            className="flex items-center"
-          >
-            <Database className="h-4 w-4 mr-1" />
-            Database
-          </Button>
+      <CardContent className="p-0">
+        <div className="px-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {Object.entries(FILE_TYPES).map(([key, { label, icon }]) => (
+              <Button
+                key={key}
+                variant={selectedType === key ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleTypeSelection(key)}
+                className="flex items-center gap-1"
+              >
+                {icon}
+                {label}
+              </Button>
+            ))}
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Upload file</p>
+            <UploadArea
+              files={files}
+              isDragging={isDragging}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onFileChange={handleFileChange}
+              onRemoveFile={removeFile}
+              acceptedFileTypes={acceptedFileTypes}
+            />
+          </div>
+          
+          <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-2 rounded-md">
+            <div className="flex gap-2 items-start">
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                Supported formats: CSV, Excel. Maximum file size: 50MB.
+              </p>
+            </div>
+          </div>
         </div>
-        
-        {isProcessing ? (
-          <ProcessingProgress progress={progress} />
-        ) : (
-          <UploadArea
-            files={files}
-            isDragging={isDragging}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onFileChange={handleFileChange}
-            onRemoveFile={removeFile}
-            acceptedFileTypes={getAcceptedTypes()}
-          />
-        )}
       </CardContent>
-      <CardFooter className="flex justify-between">
+      <CardFooter className="border-t bg-muted/50 p-4 flex justify-end">
         <Button 
-          variant="ghost" 
-          disabled={files.length === 0 || isProcessing}
-          onClick={resetFiles}
+          onClick={handleProcess}
+          disabled={isUploadButtonDisabled}
+          className="flex items-center gap-2"
         >
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleProcess} 
-          disabled={files.length === 0 || isProcessing}
-        >
-          <SparklesIcon className="h-4 w-4 mr-1" /> Upload for Analysis
+          <Upload className="h-4 w-4" />
+          Upload for Analysis
         </Button>
       </CardFooter>
     </Card>

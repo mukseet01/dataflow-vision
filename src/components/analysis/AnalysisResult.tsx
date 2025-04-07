@@ -4,7 +4,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Expand, Download, Copy, CheckCheck } from "lucide-react";
+import { 
+  Expand, 
+  Download, 
+  Copy, 
+  CheckCheck,
+  FileSpreadsheet,
+  FileText,
+  FilePresentationDashed, 
+  FilePdf
+} from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { exportAnalysisReport } from "@/services/analysisService";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface AnalysisResultProps {
   result: {
@@ -23,10 +43,15 @@ interface AnalysisResultProps {
       total_columns?: number;
     };
   };
+  requestId?: string;
 }
 
-const AnalysisResult = ({ result }: AnalysisResultProps) => {
+const AnalysisResult = ({ result, requestId }: AnalysisResultProps) => {
   const [copied, setCopied] = useState(false);
+  const [exportTitle, setExportTitle] = useState("Data Analysis Report");
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'pptx' | 'xlsx' | 'docx'>('pdf');
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
   useEffect(() => {
     if (copied) {
@@ -42,8 +67,33 @@ const AnalysisResult = ({ result }: AnalysisResultProps) => {
     setCopied(true);
   };
 
+  const handleExport = async () => {
+    if (!requestId) return;
+    
+    setExporting(true);
+    try {
+      await exportAnalysisReport(requestId, {
+        format: exportFormat,
+        title: exportTitle
+      });
+      setExportDialogOpen(false);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat().format(num);
+  };
+
+  const getExportIcon = (format: string) => {
+    switch(format) {
+      case 'pdf': return <FilePdf className="w-4 h-4 mr-2" />;
+      case 'pptx': return <FilePresentationDashed className="w-4 h-4 mr-2" />;
+      case 'docx': return <FileText className="w-4 h-4 mr-2" />;
+      case 'xlsx': return <FileSpreadsheet className="w-4 h-4 mr-2" />;
+      default: return <Download className="w-4 h-4 mr-2" />;
+    }
   };
 
   return (
@@ -54,10 +104,83 @@ const AnalysisResult = ({ result }: AnalysisResultProps) => {
             <CardTitle>Analysis Result</CardTitle>
             <CardDescription>AI-generated insights from your data</CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={handleCopyResult}>
-            {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
-            <span className="ml-2">{copied ? "Copied" : "Copy"}</span>
-          </Button>
+          <div className="flex space-x-2">
+            {requestId && (
+              <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Download size={16} className="mr-2" />
+                    Export
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Export Analysis Report</DialogTitle>
+                    <DialogDescription>
+                      Choose a format and title for your exported report
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label htmlFor="title" className="text-right">Title</label>
+                      <Input 
+                        id="title" 
+                        value={exportTitle}
+                        onChange={(e) => setExportTitle(e.target.value)}
+                        className="col-span-3"
+                        placeholder="Enter report title" 
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label className="text-right">Format</label>
+                      <div className="col-span-3 flex flex-wrap gap-2">
+                        <Button 
+                          variant={exportFormat === 'pdf' ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => setExportFormat('pdf')}
+                        >
+                          <FilePdf className="mr-1 h-4 w-4" /> PDF
+                        </Button>
+                        <Button 
+                          variant={exportFormat === 'pptx' ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => setExportFormat('pptx')}
+                        >
+                          <FilePresentationDashed className="mr-1 h-4 w-4" /> PowerPoint
+                        </Button>
+                        <Button 
+                          variant={exportFormat === 'docx' ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => setExportFormat('docx')}
+                        >
+                          <FileText className="mr-1 h-4 w-4" /> Word
+                        </Button>
+                        <Button 
+                          variant={exportFormat === 'xlsx' ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => setExportFormat('xlsx')}
+                        >
+                          <FileSpreadsheet className="mr-1 h-4 w-4" /> Excel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setExportDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleExport} disabled={exporting}>
+                      {exporting ? "Exporting..." : "Export"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+            <Button variant="outline" size="sm" onClick={handleCopyResult}>
+              {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
+              <span className="ml-2">{copied ? "Copied" : "Copy"}</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="whitespace-pre-wrap bg-muted p-4 rounded-md overflow-auto max-h-[400px]">

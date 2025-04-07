@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,36 +12,46 @@ interface DataAnalysisPromptProps {
   onAnalysisComplete?: (result: any) => void;
 }
 
-const DataAnalysisPrompt = ({ fileId, fileName, onAnalysisComplete }: DataAnalysisPromptProps) => {
+const DataAnalysisPrompt = ({ 
+  fileId, 
+  fileName,
+  onAnalysisComplete 
+}: {
+  fileId: string;
+  fileName: string;
+  onAnalysisComplete: (result: any) => void;
+}) => {
   const [prompt, setPrompt] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+  };
+  
+  const handleSubmitPrompt = async () => {
     if (!prompt.trim()) {
       toast.error("Please enter an analysis prompt");
       return;
     }
     
+    setIsAnalyzing(true);
+    
     try {
-      setIsProcessing(true);
-      
       const result = await createAnalysisRequest({
-        fileId,
-        prompt: prompt.trim()
+        prompt,
+        fileId
       });
       
-      if (result && !result.error) {
-        toast.success("Analysis completed successfully");
-        if (onAnalysisComplete) {
-          onAnalysisComplete(result);
-        }
+      if (result) {
+        onAnalysisComplete({
+          result: result,
+          requestId: result.requestId
+        });
       }
     } catch (error) {
       console.error("Analysis failed:", error);
     } finally {
-      setIsProcessing(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -62,13 +71,13 @@ const DataAnalysisPrompt = ({ fileId, fileName, onAnalysisComplete }: DataAnalys
           Ask an AI to analyze "{fileName}"
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmitPrompt}>
         <CardContent className="space-y-4">
           <Textarea 
             placeholder="Describe what analysis you want to perform on this data..." 
             className="min-h-[120px]"
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={handlePromptChange}
           />
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Suggested prompts:</p>
@@ -91,9 +100,9 @@ const DataAnalysisPrompt = ({ fileId, fileName, onAnalysisComplete }: DataAnalys
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isProcessing || !prompt.trim()}
+            disabled={isAnalyzing || !prompt.trim()}
           >
-            {isProcessing ? (
+            {isAnalyzing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Analyzing...

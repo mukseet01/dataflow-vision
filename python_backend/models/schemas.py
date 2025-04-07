@@ -36,7 +36,7 @@ class ProcessingResponse(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
     temp_files: List[str] = []
 
-# New schemas for data analysis
+# Schemas for data analysis
 class AnalysisRequest(BaseModel):
     request_id: str
     file_url: str
@@ -53,3 +53,18 @@ class AnalysisResponse(BaseModel):
     visualization: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     temp_files: List[str] = []
+
+# New schemas for data export
+class ExportRequest(BaseModel):
+    request_id: str
+    format: str  # 'pdf', 'pptx', 'xlsx', 'docx'
+    title: str
+    analysis_data: Dict[str, Any]
+    api_key: Optional[str] = None
+
+class ExportResponse(BaseModel):
+    request_id: str
+    format: str
+    export_file_path: str
+    download_url: str
+    metadata: Optional[Dict[str, Any]] = None

@@ -8,9 +8,10 @@ import time
 from typing import List, Optional
 import shutil
 
-from models.schemas import FileRequest, ProcessingResponse, AnalysisRequest, AnalysisResponse
+from models.schemas import FileRequest, ProcessingResponse, AnalysisRequest, AnalysisResponse, ExportRequest, ExportResponse
 from services.document_processor import process_document_handler
 from services.analysis_service import process_analysis_request
+from services.export_service import generate_export
 from utils.temp_files import TEMP_DIR, cleanup_files
 from config.settings import FILE_SIZE_LIMITS, MAX_ROWS_PER_SHEET
 
@@ -26,6 +27,11 @@ async def process_document(file_request: FileRequest, background_tasks: Backgrou
 async def analyze_data(analysis_request: AnalysisRequest, background_tasks: BackgroundTasks):
     """Analyze data using PandasAI."""
     return await process_analysis_request(analysis_request, background_tasks)
+
+@app.post("/export", response_model=ExportResponse)
+async def export_analysis(export_request: ExportRequest, background_tasks: BackgroundTasks):
+    """Export analysis data to various document formats."""
+    return await generate_export(export_request, background_tasks)
 
 @app.get("/health")
 def health_check():

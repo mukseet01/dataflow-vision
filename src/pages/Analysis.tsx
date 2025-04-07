@@ -14,19 +14,23 @@ const Analysis = () => {
   const [activeTab, setActiveTab] = useState("analysis");
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [requestId, setRequestId] = useState<string | undefined>(undefined);
   
   const handleFileUploaded = (fileData: any) => {
     setSelectedFile(fileData);
     setAnalysisResult(null);
+    setRequestId(undefined);
   };
   
   const handleAnalysisComplete = (result: any) => {
     setAnalysisResult(result.result);
+    setRequestId(result.requestId);
   };
   
   const handleNewAnalysis = () => {
     setSelectedFile(null);
     setAnalysisResult(null);
+    setRequestId(undefined);
   };
 
   return (
@@ -67,7 +71,10 @@ const Analysis = () => {
                 )}
                 
                 {analysisResult && (
-                  <AnalysisResult result={analysisResult} />
+                  <AnalysisResult 
+                    result={analysisResult}
+                    requestId={requestId} 
+                  />
                 )}
               </div>
               <div>

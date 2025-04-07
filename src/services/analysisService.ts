@@ -7,6 +7,11 @@ export interface AnalysisRequest {
   fileId: string;
 }
 
+export interface ExportOptions {
+  format: 'pdf' | 'pptx' | 'xlsx' | 'docx';
+  title?: string;
+}
+
 export async function createAnalysisRequest(request: AnalysisRequest) {
   try {
     const user = (await supabase.auth.getUser()).data.user;
@@ -52,6 +57,43 @@ export async function createAnalysisRequest(request: AnalysisRequest) {
   } catch (error: any) {
     console.error("Error analyzing data:", error);
     toast.error(`Analysis failed: ${error.message}`);
+    throw error;
+  }
+}
+
+export async function exportAnalysisReport(requestId: string, options: ExportOptions) {
+  try {
+    const { data, error } = await supabase.functions.invoke('data-analysis', {
+      body: { 
+        action: 'export',
+        requestId,
+        format: options.format,
+        title: options.title || 'Data Analysis Report'
+      }
+    });
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    // If URL is returned, trigger download
+    if (data?.downloadUrl) {
+      // Create temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = data.downloadUrl;
+      link.download = options.title ? `${options.title}.${options.format}` : `analysis-report.${options.format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Report exported successfully as ${options.format.toUpperCase()}`);
+      return data;
+    } else {
+      throw new Error("No download URL returned");
+    }
+  } catch (error: any) {
+    console.error("Error exporting analysis:", error);
+    toast.error(`Export failed: ${error.message}`);
     throw error;
   }
 }
