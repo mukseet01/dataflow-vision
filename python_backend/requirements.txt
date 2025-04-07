@@ -12,3 +12,4 @@ python-docx>=0.8.11
 python-multipart>=0.0.5
 pymupdf>=1.19.0
 langdetect>=1.0.9
+openpyxl>=3.0.10

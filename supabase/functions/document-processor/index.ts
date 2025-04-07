@@ -103,7 +103,7 @@ serve(async (req) => {
         .insert(entities);
     }
     
-    // Save structured data
+    // Save structured data with multi-sheet support
     if (result.data_frame) {
       await supabase
         .from('extracted_data')
@@ -115,6 +115,12 @@ serve(async (req) => {
         });
     }
 
+    // If there's an Excel export, upload it to storage
+    if (result.metadata?.has_excel_export) {
+      // Upload logic would go here if we had the actual file
+      console.log("Excel export available with", result.metadata.sheet_count, "sheets");
+    }
+
     // Schedule cleanup of temporary files
     if (result.temp_files && result.temp_files.length > 0) {
       EdgeRuntime.waitUntil(cleanupTempFiles(result.temp_files));
@@ -123,7 +129,13 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        result
+        result: {
+          ...result,
+          sheet_info: result.data_frame ? {
+            total_rows: result.data_frame.total_rows,
+            sheet_count: result.data_frame.sheet_count
+          } : null
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

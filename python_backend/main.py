@@ -17,6 +17,7 @@ import spacy
 import re
 from docx import Document
 import time
+import math
 
 # Load spaCy NER model
 try:
@@ -41,6 +42,9 @@ FILE_SIZE_LIMITS = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": 10
 }
 
+# Maximum number of rows per sheet
+MAX_ROWS_PER_SHEET = 1000
+
 # Create temporary directory for file processing
 TEMP_DIR = tempfile.mkdtemp()
 
@@ -57,13 +61,24 @@ class EntityModel(BaseModel):
     page_number: Optional[int] = None
     position: Optional[Dict[str, Any]] = None
 
+class SheetInfo(BaseModel):
+    name: str
+    row_count: int
+    column_count: int
+
+class DataFrameOutput(BaseModel):
+    headers: List[str]
+    sheets: List[Dict[str, Any]]
+    total_rows: int
+    sheet_count: int
+
 class ProcessingResponse(BaseModel):
     file_id: str
     full_text: Optional[str] = None
     detected_language: Optional[str] = None
     entities: List[EntityModel] = []
     entities_summary: Optional[Dict[str, List[str]]] = None
-    data_frame: Optional[Dict[str, Any]] = None
+    data_frame: Optional[DataFrameOutput] = None
     metadata: Optional[Dict[str, Any]] = None
     temp_files: List[str] = []
 
@@ -176,8 +191,8 @@ def extract_entities_with_ner(text: str) -> List[EntityModel]:
     
     return entities
 
-def create_dataframe_from_entities(entities: List[EntityModel]) -> Dict[str, Any]:
-    """Create a pandas DataFrame from extracted entities."""
+def create_dataframe_from_entities(entities: List[EntityModel]) -> DataFrameOutput:
+    """Create a pandas DataFrame from extracted entities with pagination."""
     # Group entities by type
     entity_groups = {}
     for entity in entities:
@@ -185,29 +200,46 @@ def create_dataframe_from_entities(entities: List[EntityModel]) -> Dict[str, Any
             entity_groups[entity.type] = []
         entity_groups[entity.type].append(entity.value)
     
-    # Create dataframe
-    df_dict = {
-        "headers": list(entity_groups.keys()),
-        "rows": []
-    }
+    # Create headers
+    headers = list(entity_groups.keys())
     
     # Find the maximum number of entities in any group
     max_entities = max([len(group) for group in entity_groups.values()], default=0)
     
-    # Create rows
-    for i in range(max_entities):
-        row = []
-        for entity_type in df_dict["headers"]:
-            if i < len(entity_groups[entity_type]):
-                row.append(entity_groups[entity_type][i])
-            else:
-                row.append("")
-        df_dict["rows"].append(row)
+    # Calculate number of sheets needed
+    sheet_count = math.ceil(max_entities / MAX_ROWS_PER_SHEET)
+    sheets = []
     
-    return df_dict
+    for sheet_idx in range(sheet_count):
+        start_idx = sheet_idx * MAX_ROWS_PER_SHEET
+        end_idx = min((sheet_idx + 1) * MAX_ROWS_PER_SHEET, max_entities)
+        
+        sheet_rows = []
+        for i in range(start_idx, end_idx):
+            row = []
+            for entity_type in headers:
+                if i < len(entity_groups[entity_type]):
+                    row.append(entity_groups[entity_type][i])
+                else:
+                    row.append("")
+            sheet_rows.append(row)
+        
+        sheets.append({
+            "name": f"Sheet{sheet_idx + 1}",
+            "rows": sheet_rows,
+            "row_count": len(sheet_rows),
+            "column_count": len(headers)
+        })
+    
+    return DataFrameOutput(
+        headers=headers,
+        sheets=sheets,
+        total_rows=max_entities,
+        sheet_count=sheet_count
+    )
 
 def process_spreadsheet(file_path: str) -> tuple:
-    """Process Excel or CSV files."""
+    """Process Excel or CSV files with pagination."""
     try:
         if file_path.endswith('.csv'):
             df = pd.read_csv(file_path)
@@ -217,16 +249,39 @@ def process_spreadsheet(file_path: str) -> tuple:
         # Convert to text for entity extraction
         text = df.to_string()
         
-        # Create structured data format
-        data_frame = {
-            "headers": df.columns.tolist(),
-            "rows": df.values.tolist()
-        }
+        # Get headers
+        headers = df.columns.tolist()
+        
+        # Calculate number of sheets needed
+        total_rows = len(df)
+        sheet_count = math.ceil(total_rows / MAX_ROWS_PER_SHEET)
+        
+        # Create sheets
+        sheets = []
+        for sheet_idx in range(sheet_count):
+            start_idx = sheet_idx * MAX_ROWS_PER_SHEET
+            end_idx = min((sheet_idx + 1) * MAX_ROWS_PER_SHEET, total_rows)
+            
+            sheet_df = df.iloc[start_idx:end_idx]
+            
+            sheets.append({
+                "name": f"Sheet{sheet_idx + 1}",
+                "rows": sheet_df.values.tolist(),
+                "row_count": len(sheet_df),
+                "column_count": len(headers)
+            })
+        
+        data_frame = DataFrameOutput(
+            headers=headers,
+            sheets=sheets,
+            total_rows=total_rows,
+            sheet_count=sheet_count
+        )
         
         return text, data_frame
     except Exception as e:
         print(f"Error processing spreadsheet: {str(e)}")
-        return "", {"headers": [], "rows": []}
+        return "", DataFrameOutput(headers=[], sheets=[], total_rows=0, sheet_count=0)
 
 def process_docx(file_path: str) -> str:
     """Process Word documents."""
@@ -245,6 +300,20 @@ def detect_language(text: str) -> str:
         return detect(text) if text else "unknown"
     except:
         return "unknown"
+
+def export_to_excel(data_frame: DataFrameOutput, output_path: str) -> str:
+    """Export data to Excel with multiple sheets if needed."""
+    try:
+        with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+            for sheet in data_frame.sheets:
+                # Create DataFrame for this sheet
+                sheet_df = pd.DataFrame(sheet["rows"], columns=data_frame.headers)
+                # Write to Excel
+                sheet_df.to_excel(writer, sheet_name=sheet["name"], index=False)
+        return output_path
+    except Exception as e:
+        print(f"Error exporting to Excel: {str(e)}")
+        return ""
 
 @app.post("/process", response_model=ProcessingResponse)
 async def process_document(file_request: FileRequest, background_tasks: BackgroundTasks):
@@ -318,12 +387,22 @@ async def process_document(file_request: FileRequest, background_tasks: Backgrou
         # Detect language
         detected_language = detect_language(text)
         
+        # Create Excel export if data_frame exists
+        excel_output = None
+        if data_frame and data_frame.total_rows > 0:
+            excel_output = f"{file_path}_export.xlsx"
+            export_to_excel(data_frame, excel_output)
+            temp_files.append(excel_output)
+        
         # Processing metadata
         metadata = {
             "processing_time": time.time() - start_time,
             "character_count": len(text),
             "entity_count": len(entities),
-            "processing_timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            "processing_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "has_excel_export": excel_output is not None,
+            "sheet_count": data_frame.sheet_count if data_frame else 0,
+            "total_rows": data_frame.total_rows if data_frame else 0
         }
         
         # Background task to clean up files after processing
@@ -364,6 +443,7 @@ async def startup_event():
     """Run on startup."""
     print(f"Temporary directory created at: {TEMP_DIR}")
     print(f"File size limits: {FILE_SIZE_LIMITS}")
+    print(f"Max rows per sheet: {MAX_ROWS_PER_SHEET}")
     print(f"Tesseract version: {pytesseract.get_tesseract_version()}")
     print(f"SpaCy model loaded: {nlp.meta['name']}")
 
