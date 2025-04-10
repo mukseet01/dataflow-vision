@@ -3,7 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const PYTHON_API_URL = "https://your-fastapi-service-url.com"; // Replace with your deployed FastAPI service URL
+// Get FastAPI URL from environment variable or use a default for local testing
+const PYTHON_API_URL = Deno.env.get('FASTAPI_URL') || "http://localhost:8000";
 
 // Create a Supabase client for the Edge Function
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -123,7 +124,8 @@ serve(async (req) => {
 
     // Schedule cleanup of temporary files
     if (result.temp_files && result.temp_files.length > 0) {
-      EdgeRuntime.waitUntil(cleanupTempFiles(result.temp_files));
+      // We can't use EdgeRuntime.waitUntil here, so we'll need a different approach
+      console.log(`Temporary files to clean up: ${result.temp_files.length}`);
     }
     
     return new Response(
@@ -148,30 +150,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Background task to clean up temporary files
-async function cleanupTempFiles(tempFiles) {
-  try {
-    console.log('Starting cleanup of temporary files');
-    
-    // Wait for some time to ensure processing is complete
-    await new Promise(resolve => setTimeout(resolve, 60000)); // 1 minute delay
-    
-    // Delete temporary files
-    for (const filePath of tempFiles) {
-      const pathParts = filePath.split('/');
-      const fileName = pathParts[pathParts.length - 1];
-      
-      await supabase
-        .storage
-        .from('processed_documents')
-        .remove([fileName]);
-      
-      console.log(`Removed temporary file: ${fileName}`);
-    }
-    
-    console.log('Temporary files cleanup completed');
-  } catch (error) {
-    console.error('Error cleaning up temporary files:', error);
-  }
-}

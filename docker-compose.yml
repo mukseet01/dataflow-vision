@@ -1,0 +1,23 @@
+
+version: '3.8'
+
+services:
+  fastapi-backend:
+    build:
+      context: ./python_backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TEMP_DIR=/app/temp
+      - MAX_WORKERS=2
+      - LOG_LEVEL=info
+      - ALLOWED_ORIGINS=*
+    volumes:
+      - ./python_backend:/app
+      - temp-data:/app/temp
+    restart: unless-stopped
+
+volumes:
+  temp-data:

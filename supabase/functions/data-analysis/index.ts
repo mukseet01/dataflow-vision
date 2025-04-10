@@ -3,7 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const PYTHON_API_URL = "https://your-fastapi-service-url.com"; // Replace with your deployed FastAPI service URL
+// Get FastAPI URL from environment variable or use a default for local testing
+const PYTHON_API_URL = Deno.env.get('FASTAPI_URL') || "http://localhost:8000";
 
 // Create a Supabase client for the Edge Function
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -120,9 +121,9 @@ async function handleAnalysis(requestData: any) {
     })
     .eq('id', requestId);
   
-  // Schedule cleanup of temporary files
+  // Log temporary files for cleanup
   if (result.temp_files && result.temp_files.length > 0) {
-    EdgeRuntime.waitUntil(cleanupTempFiles(result.temp_files));
+    console.log(`Temporary files to clean up: ${result.temp_files.length}`);
   }
   
   return new Response(
@@ -187,13 +188,8 @@ async function handleExport(requestData: any) {
 
   const result = await apiResponse.json();
   
-  // If the export generated a file, upload it to Supabase storage
-  if (result.export_file_path) {
-    // The Python backend would have created a temporary file
-    // We would need to upload this to Supabase Storage and get a download URL
-    // This is a placeholder for the actual implementation
-    
-    // Return the download URL
+  // If the export generated a file, return its download URL
+  if (result.download_url) {
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -203,28 +199,5 @@ async function handleExport(requestData: any) {
     );
   } else {
     throw new Error('Export failed to generate a file');
-  }
-}
-
-// Background task to clean up temporary files
-async function cleanupTempFiles(tempFiles: string[]) {
-  try {
-    console.log('Starting cleanup of temporary files');
-    
-    // Wait for some time to ensure processing is complete
-    await new Promise(resolve => setTimeout(resolve, 60000)); // 1 minute delay
-    
-    // Delete temporary files
-    for (const filePath of tempFiles) {
-      const pathParts = filePath.split('/');
-      const fileName = pathParts[pathParts.length - 1];
-      
-      // Logic to clean up files would go here
-      console.log(`Cleaning up temporary file: ${fileName}`);
-    }
-    
-    console.log('Temporary files cleanup completed');
-  } catch (error) {
-    console.error('Error cleaning up temporary files:', error);
   }
 }
