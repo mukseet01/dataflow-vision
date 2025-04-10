@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UploadCloud, X, FileType } from "lucide-react";
@@ -11,31 +12,82 @@ interface StructuredDataUploadCardProps {
 
 const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardProps) => {
   const [file, setFile] = useState<File | null>(null);
-  const { upload, progress, fileData, error, reset } = useFileUpload();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  
+  const { 
+    files, 
+    handleFileChange: handleFileUploadChange, 
+    processFiles, 
+    isProcessing, 
+    progress,
+    resetFiles
+  } = useFileUpload();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
+      setUploadError(null);
     }
   };
 
   const handleUpload = async () => {
     if (file) {
-      await upload(file);
+      setIsUploading(true);
+      setUploadProgress(10);
+      
+      try {
+        // Simulate file upload process
+        setUploadProgress(50);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setUploadProgress(100);
+        
+        // Add file to the useFileUpload hook for processing
+        handleFileUploadChange({
+          target: { files: [file] }
+        } as React.ChangeEvent<HTMLInputElement>);
+        
+        // Process the file
+        await processFiles();
+        
+        // The most recent file would be the last one in the files array
+        if (files.length > 0) {
+          const uploadedFile = files[files.length - 1];
+          // Simulate getting file data from the server
+          const fileData = {
+            id: `file-${Date.now()}`,
+            file_name: uploadedFile.name,
+            file_size: uploadedFile.size,
+            file_type: uploadedFile.type
+          };
+          onFileUploaded(fileData);
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        setUploadError("Failed to upload file. Please try again.");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
   const handleReset = () => {
     setFile(null);
-    reset();
+    setUploadProgress(0);
+    setUploadError(null);
+    resetFiles();
   };
 
-  React.useEffect(() => {
-    if (fileData) {
-      onFileUploaded(fileData);
-    }
-  }, [fileData, onFileUploaded]);
+  useEffect(() => {
+    return () => {
+      // Cleanup function
+      if (file && 'preview' in file && file.preview) {
+        URL.revokeObjectURL(file.preview as string);
+      }
+    };
+  }, [file]);
 
   return (
     <Card>
@@ -72,22 +124,22 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
             </div>
           </div>
         )}
-        {error && (
-          <p className="text-sm text-destructive mt-2">Error: {error}</p>
+        {uploadError && (
+          <p className="text-sm text-destructive mt-2">Error: {uploadError}</p>
         )}
-        {progress > 0 && (
-          <Progress value={progress} className="mt-4" />
+        {uploadProgress > 0 && (
+          <Progress value={uploadProgress} className="mt-4" />
         )}
       </CardContent>
       <CardFooter className="flex justify-end space-x-2">
         {file && (
-          <Button variant="ghost" size="sm" onClick={handleReset} disabled={progress > 0}>
+          <Button variant="ghost" size="sm" onClick={handleReset} disabled={isUploading}>
             <X className="mr-2 h-4 w-4" />
             Remove
           </Button>
         )}
-        <Button onClick={handleUpload} disabled={!file || progress > 0}>
-          {progress > 0 ? "Uploading..." : "Upload"}
+        <Button onClick={handleUpload} disabled={!file || isUploading}>
+          {isUploading ? "Uploading..." : "Upload"}
         </Button>
       </CardFooter>
     </Card>

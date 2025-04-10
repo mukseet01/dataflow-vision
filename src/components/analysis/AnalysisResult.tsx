@@ -9,8 +9,8 @@ import {
   CheckCheck,
   FileSpreadsheet,
   FileText,
-  // Fix the Lucide icon imports
-  FilePresentation, 
+  // Fixed icon import
+  Presentation, 
   File 
 } from "lucide-react";
 import { exportAnalysisReport } from "@/services/analysisService";

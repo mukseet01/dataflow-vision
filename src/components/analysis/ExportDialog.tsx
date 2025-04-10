@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, FileText, FilePresentation, File } from "lucide-react";
+import { FileSpreadsheet, FileText, Presentation, File } from "lucide-react";
 import { exportAnalysisReport } from "@/services/analysisService";
 
 interface ExportDialogProps {
@@ -66,7 +66,7 @@ const ExportDialog = ({ open, onOpenChange, requestId }: ExportDialogProps) => {
                 size="sm"
                 onClick={() => setExportFormat('pptx')}
               >
-                <FilePresentation className="mr-1 h-4 w-4" /> PowerPoint
+                <Presentation className="mr-1 h-4 w-4" /> PowerPoint
               </Button>
               <Button 
                 variant={exportFormat === 'docx' ? "default" : "outline"} 
