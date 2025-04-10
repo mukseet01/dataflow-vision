@@ -54,7 +54,7 @@ class AnalysisResponse(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
     temp_files: List[str] = []
 
-# New schemas for data export
+# Schemas for data export
 class ExportRequest(BaseModel):
     request_id: str
     format: str  # 'pdf', 'pptx', 'xlsx', 'docx'
