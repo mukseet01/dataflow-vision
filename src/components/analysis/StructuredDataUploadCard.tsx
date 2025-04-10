@@ -3,7 +3,9 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UploadCloud } from "lucide-react";
-import { useFileUpload } from "@/hooks/use-file-upload";
+import { useFilesState } from "@/hooks/use-files-state";
+import { useFileProcessing } from "@/hooks/use-file-processing";
+import { useFileValidation } from "@/hooks/use-file-validation";
 import { toast } from "sonner";
 
 interface StructuredDataUploadCardProps {
@@ -13,7 +15,10 @@ interface StructuredDataUploadCardProps {
 const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const fileUpload = useFileUpload();
+  
+  const { addFiles, updateProgress, setProcessingState } = useFilesState();
+  const { validateFiles } = useFileValidation();
+  const { processFiles } = useFileProcessing();
   
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -58,10 +63,16 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
     try {
       setIsUploading(true);
       
-      // Process the file using uploadFile function
-      const processedFile = await fileUpload.processFiles();
+      // Validate file
+      const validatedFiles = validateFiles([file]);
+      if (validatedFiles.length === 0) {
+        throw new Error("File validation failed");
+      }
       
-      // Create a mock result for now as a simplified version
+      // Add file to state temporarily
+      addFiles(validatedFiles);
+      
+      // Create a mock result since we're not actually processing through the hook pipeline
       const result = {
         id: `file-${Date.now()}`,
         file_name: file.name,
@@ -70,11 +81,15 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
         original_path: URL.createObjectURL(file)
       };
       
+      // Simulate processing
+      updateProgress(100);
+      
       onFileUploaded(result);
       toast.success("File uploaded successfully");
     } catch (error: any) {
       toast.error(`Upload failed: ${error.message}`);
     } finally {
+      setProcessingState(false);
       setIsUploading(false);
     }
   };
