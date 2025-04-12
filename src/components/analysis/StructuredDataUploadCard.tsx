@@ -52,9 +52,10 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
     
     try {
       // Upload file using our hook
+      setIsUploading(true);
       const result = await uploadFile(file);
       
-      if (result) {
+      if (result && result.id) {
         onFileUploaded(result);
         toast.success("File uploaded successfully");
       } else {
