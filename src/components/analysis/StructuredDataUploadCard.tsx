@@ -54,12 +54,12 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
       // Upload file using our hook
       const result = await uploadFile(file);
       
-      if (!result) {
+      if (result) {
+        onFileUploaded(result);
+        toast.success("File uploaded successfully");
+      } else {
         throw new Error("Upload failed");
       }
-      
-      onFileUploaded(result);
-      toast.success("File uploaded successfully");
     } catch (error: any) {
       toast.error(`Upload failed: ${error.message}`);
     }
