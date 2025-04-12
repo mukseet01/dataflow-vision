@@ -1,0 +1,27 @@
+
+# Use Node.js as the base image
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy project files
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Install a simple HTTP server to serve the static content
+RUN npm install -g serve
+
+# Expose port for the frontend
+EXPOSE 3000
+
+# Command to run the application
+CMD ["serve", "-s", "dist", "-l", "3000"]
