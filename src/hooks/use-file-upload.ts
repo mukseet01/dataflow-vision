@@ -9,6 +9,8 @@ import { uploadFile as uploadFileService } from "@/services/uploadService";
 
 export const useFileUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const [fileData, setFileData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const {
     files,
@@ -59,6 +61,7 @@ export const useFileUpload = () => {
 
   const uploadFile = async (file: File) => {
     setIsUploading(true);
+    setError(null);
     try {
       const validatedFiles = validateFiles([file]);
       if (validatedFiles.length === 0) {
@@ -67,10 +70,20 @@ export const useFileUpload = () => {
       
       // Upload the file using the service
       const result = await uploadFileService(file);
+      setFileData(result);
       return result;
+    } catch (err: any) {
+      setError(err.message || "Upload failed");
+      throw err;
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const reset = () => {
+    resetFiles();
+    setFileData(null);
+    setError(null);
   };
 
   return {
@@ -79,6 +92,8 @@ export const useFileUpload = () => {
     isProcessing,
     isUploading,
     progress,
+    fileData,
+    error,
     handleDragOver,
     handleDragLeave,
     handleDrop: handleFileDrop,
@@ -86,6 +101,7 @@ export const useFileUpload = () => {
     removeFile,
     processFiles: startProcessing,
     resetFiles,
-    uploadFile
+    uploadFile,
+    reset
   };
 };
