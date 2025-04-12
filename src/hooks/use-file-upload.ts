@@ -1,10 +1,15 @@
 
+import { useState } from "react";
 import { useFilesState } from "./use-files-state";
 import { useDragDrop } from "./use-drag-drop";
 import { useFileValidation } from "./use-file-validation";
 import { useFileProcessing } from "./use-file-processing";
+import { FileWithPreview } from "@/utils/fileUtils";
+import { uploadFile as uploadFileService } from "@/services/uploadService";
 
 export const useFileUpload = () => {
+  const [isUploading, setIsUploading] = useState(false);
+  
   const {
     files,
     progress,
@@ -52,10 +57,27 @@ export const useFileUpload = () => {
     }
   };
 
+  const uploadFile = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const validatedFiles = validateFiles([file]);
+      if (validatedFiles.length === 0) {
+        throw new Error("File validation failed");
+      }
+      
+      // Upload the file using the service
+      const result = await uploadFileService(file);
+      return result;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return {
     files,
     isDragging,
     isProcessing,
+    isUploading,
     progress,
     handleDragOver,
     handleDragLeave,
@@ -63,6 +85,7 @@ export const useFileUpload = () => {
     handleFileChange: handleInputChange,
     removeFile,
     processFiles: startProcessing,
-    resetFiles
+    resetFiles,
+    uploadFile
   };
 };

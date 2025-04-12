@@ -1,46 +1,35 @@
 
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UploadCloud } from "lucide-react";
-import { useFilesState } from "@/hooks/use-files-state";
-import { useFileProcessing } from "@/hooks/use-file-processing";
-import { useFileValidation } from "@/hooks/use-file-validation";
 import { toast } from "sonner";
+import { useFileUpload } from "@/hooks/use-file-upload";
 
 interface StructuredDataUploadCardProps {
   onFileUploaded: (fileData: any) => void;
 }
 
 const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const { 
+    handleDragOver, 
+    handleDragLeave, 
+    handleDrop, 
+    handleFileChange, 
+    isDragging, 
+    isUploading, 
+    uploadFile 
+  } = useFileUpload();
   
-  const { addFiles, updateProgress, setProcessingState } = useFilesState();
-  const { validateFiles } = useFileValidation();
-  const { processFiles } = useFileProcessing();
-  
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-  
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-  
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files[0]);
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      await handleFileUpload(e.target.files[0]);
     }
   };
   
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFileUpload(e.target.files[0]);
+  const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await handleFileUpload(e.dataTransfer.files[0]);
     }
   };
   
@@ -61,36 +50,17 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
     }
     
     try {
-      setIsUploading(true);
+      // Upload file using our hook
+      const result = await uploadFile(file);
       
-      // Validate file
-      const validatedFiles = validateFiles([file]);
-      if (validatedFiles.length === 0) {
-        throw new Error("File validation failed");
+      if (!result) {
+        throw new Error("Upload failed");
       }
-      
-      // Add file to state temporarily
-      addFiles(validatedFiles);
-      
-      // Create a mock result since we're not actually processing through the hook pipeline
-      const result = {
-        id: `file-${Date.now()}`,
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type,
-        original_path: URL.createObjectURL(file)
-      };
-      
-      // Simulate processing
-      updateProgress(100);
       
       onFileUploaded(result);
       toast.success("File uploaded successfully");
     } catch (error: any) {
       toast.error(`Upload failed: ${error.message}`);
-    } finally {
-      setProcessingState(false);
-      setIsUploading(false);
     }
   };
 
@@ -109,7 +79,7 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          onDrop={handleFileDrop}
         >
           <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
             <UploadCloud className="h-7 w-7 text-primary" />
