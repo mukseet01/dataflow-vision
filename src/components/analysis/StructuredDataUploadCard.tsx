@@ -51,8 +51,7 @@ const StructuredDataUploadCard = ({ onFileUploaded }: StructuredDataUploadCardPr
     }
     
     try {
-      // Upload file using our hook
-      setIsUploading(true);
+      // Upload file using our hook - no need to set isUploading manually as it's managed by the hook
       const result = await uploadFile(file);
       
       if (result && result.id) {
