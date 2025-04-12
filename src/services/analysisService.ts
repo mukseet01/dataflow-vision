@@ -14,7 +14,7 @@ export interface ExportOptions {
 
 export async function createAnalysisRequest(request: AnalysisRequest) {
   try {
-    const user = (await supabase.auth.getUser()).data.user;
+    const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       toast.error("You must be logged in to analyze data");
@@ -100,7 +100,7 @@ export async function exportAnalysisReport(requestId: string, options: ExportOpt
 
 export async function getAnalysisRequests() {
   try {
-    // @ts-ignore - The table exists in the database but TypeScript doesn't know about it yet
+    // With RLS in place, this will automatically only return the current user's data
     const { data, error } = await supabase
       .from('analysis_requests')
       .select('*, file_uploads(*)')
@@ -120,7 +120,7 @@ export async function getAnalysisRequests() {
 
 export async function getAnalysisById(id: string) {
   try {
-    // @ts-ignore - The table exists in the database but TypeScript doesn't know about it yet
+    // With RLS in place, this will only return analysis owned by the current user
     const { data, error } = await supabase
       .from('analysis_requests')
       .select('*, file_uploads(*)')

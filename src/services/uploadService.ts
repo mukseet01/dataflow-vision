@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 export async function uploadFile(file: File) {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("You must be logged in to upload files");
+    }
+    
     // Upload file to Supabase Storage
     const filename = `${Date.now()}-${file.name}`;
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -22,7 +29,7 @@ export async function uploadFile(file: File) {
     const requiresOcr = file.type === "application/pdf" || 
                         file.type.startsWith("image/");
                         
-    // Save file metadata to database
+    // Save file metadata to database with user_id
     const { data: fileData, error: fileError } = await supabase
       .from('file_uploads')
       .insert({
@@ -31,6 +38,7 @@ export async function uploadFile(file: File) {
         file_size: file.size,
         original_path: publicUrl,
         ocr_required: requiresOcr,
+        user_id: user.id // Add user_id to comply with RLS
       })
       .select()
       .single();

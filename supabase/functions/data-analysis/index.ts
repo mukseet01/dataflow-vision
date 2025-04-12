@@ -6,10 +6,11 @@ import { corsHeaders } from "../_shared/cors.ts";
 // Get FastAPI URL from environment variable or use a default for local testing
 const PYTHON_API_URL = Deno.env.get('FASTAPI_URL') || "http://localhost:8000";
 
-// Create a Supabase client for the Edge Function
+// Create a Supabase client for the Edge Function with service role to bypass RLS
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
 
 serve(async (req) => {
   // Handle CORS preflight requests
