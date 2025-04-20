@@ -8,14 +8,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with better error handling
+RUN npm ci || (echo "npm ci failed" && cat npm-debug.log* && exit 1)
 
 # Copy project files
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with error handling
+RUN npm run build || (echo "Build failed" && exit 1)
 
 # Production image
 FROM node:18-alpine
@@ -26,15 +26,15 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 
-# Install production dependencies only
-RUN npm ci --production
+# Install production dependencies only with better error handling
+RUN npm ci --production || (echo "npm ci --production failed" && exit 1)
 
-# Add healthcheck
+# Add improved healthcheck with timeout
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:3000').then(() => process.exit(0)).catch(() => process.exit(1))" || exit 1
+  CMD wget -qO- http://localhost:3000/health || exit 1
 
 # Expose port
 EXPOSE 3000
 
-# Start the application with improved error handling
-CMD ["sh", "-c", "echo 'Starting application...' && npm run start || (echo 'Application failed to start' && cat npm-debug.log* 2>/dev/null || echo 'No debug logs found')"]
+# Start the application with improved error handling and logging
+CMD ["sh", "-c", "echo 'Starting application...' && npm run start || (echo 'Application failed to start' && cat npm-debug.log* 2>/dev/null && cat /app/logs/*.log 2>/dev/null || echo 'No logs found')"]

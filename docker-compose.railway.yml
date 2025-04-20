@@ -10,17 +10,18 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - TEMP_DIR=/app/temp
       - MAX_WORKERS=2
-      - LOG_LEVEL=info
-      - ALLOWED_ORIGINS=${RAILWAY_PUBLIC_DOMAIN:-*},${RAILWAY_STATIC_URL:-*}
+      - LOG_LEVEL=debug
+      - ALLOWED_ORIGINS=${RAILWAY_PUBLIC_DOMAIN:-*},${RAILWAY_STATIC_URL:-*},http://localhost:3000
     volumes:
       - temp-data:/app/temp
-    restart: unless-stopped
+      - logs:/app/logs
+    restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 20s
 
   frontend:
     build:
@@ -30,16 +31,17 @@ services:
       - VITE_SUPABASE_URL=${SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - VITE_API_URL=${RAILWAY_SERVICE_FASTAPI_BACKEND_URL:-http://fastapi-backend:8000}
-    restart: unless-stopped
+    restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 20s
     depends_on:
       fastapi-backend:
         condition: service_healthy
 
 volumes:
   temp-data:
+  logs:
