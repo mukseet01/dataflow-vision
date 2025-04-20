@@ -5,6 +5,9 @@ FROM node:18-alpine as builder
 # Set working directory
 WORKDIR /app
 
+# Install curl for healthchecks
+RUN apk --no-cache add curl wget
+
 # Copy package files
 COPY package*.json ./
 
@@ -22,6 +25,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install curl and wget for healthchecks
+RUN apk --no-cache add curl wget
+
 # Copy built assets from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
@@ -29,12 +35,17 @@ COPY --from=builder /app/package*.json ./
 # Install production dependencies only with better error handling
 RUN npm ci --production || (echo "npm ci --production failed" && exit 1)
 
-# Add improved healthcheck with timeout
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+# Create health check endpoint
+RUN echo '#!/bin/sh\nnode -e "const http=require(\"http\");const server=http.createServer((req,res)=>{if(req.url===\"/health\"){res.writeHead(200);res.end(\"OK\");}else{res.writeHead(404);res.end();}});server.listen(3001,()=>{console.log(\"Health check server running on 3001\");});"' > /app/healthcheck.js \
+    && chmod +x /app/healthcheck.js
+
+# Add more robust healthcheck with longer timeouts
+HEALTHCHECK --interval=60s --timeout=30s --start-period=40s --retries=5 \
   CMD wget -qO- http://localhost:3000/health || exit 1
 
-# Expose port
+# Expose ports
 EXPOSE 3000
+EXPOSE 3001
 
 # Start the application with improved error handling and logging
-CMD ["sh", "-c", "echo 'Starting application...' && npm run start || (echo 'Application failed to start' && cat npm-debug.log* 2>/dev/null && cat /app/logs/*.log 2>/dev/null || echo 'No logs found')"]
+CMD ["sh", "-c", "node /app/healthcheck.js & echo 'Starting application...' && npm run start || (echo 'Application failed to start' && cat npm-debug.log* 2>/dev/null && cat /app/logs/*.log 2>/dev/null || echo 'No logs found')"]

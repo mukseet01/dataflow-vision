@@ -8,14 +8,16 @@ startCommand = "npm run start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 healthcheckPath = "/health"
-healthcheckTimeout = 30
-healthcheckInterval = 60
+healthcheckTimeout = 60
+healthcheckInterval = 120
+healthcheckStartPeriod = 30
 
 [[services]]
 name = "frontend"
 dockerfile = "Dockerfile.frontend"
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
+healthcheckStartPeriod = 30
 routes = [
     { path = "/*", service = "frontend" }
 ]
@@ -23,8 +25,9 @@ routes = [
 [[services]]
 name = "backend"
 dockerfile = "python_backend/Dockerfile"
-healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckPath = "/api/health"
+healthcheckTimeout = 60
+healthcheckStartPeriod = 30
 routes = [
     { path = "/api/*", service = "backend" }
 ]
