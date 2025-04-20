@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,5 +40,9 @@ ENV LOG_LEVEL=info
 ENV ALLOWED_ORIGINS="*"
 ENV OPENAI_API_KEY=${OPENAI_API_KEY:-""}
 
-# Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "${MAX_WORKERS}", "--log-level", "${LOG_LEVEL}"]
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Command to run the application with improved error handling
+CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers ${MAX_WORKERS:-1} --log-level ${LOG_LEVEL:-info} || (echo 'Application failed to start' && cat error.log* 2>/dev/null || echo 'No error logs found')"]

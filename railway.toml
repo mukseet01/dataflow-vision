@@ -7,10 +7,15 @@ dockerfilePath = "Dockerfile.railway"
 startCommand = "npm run start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+healthcheckPath = "/"
+healthcheckTimeout = 10
+healthcheckInterval = 30
 
 [[services]]
 name = "frontend"
 dockerfile = "Dockerfile.frontend"
+healthcheckPath = "/"
+healthcheckTimeout = 10
 routes = [
     { path = "/*", service = "frontend" }
 ]
@@ -18,9 +23,12 @@ routes = [
 [[services]]
 name = "backend"
 dockerfile = "python_backend/Dockerfile"
+healthcheckPath = "/health"
+healthcheckTimeout = 10
 routes = [
     { path = "/api/*", service = "backend" }
 ]
 
 [services.env]
 PORT = "3000"
+NODE_ENV = "production"
