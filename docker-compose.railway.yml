@@ -1,0 +1,28 @@
+
+version: '3.8'
+
+services:
+  fastapi-backend:
+    build:
+      context: ./python_backend
+      dockerfile: Dockerfile
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TEMP_DIR=/app/temp
+      - MAX_WORKERS=2
+      - LOG_LEVEL=info
+      - ALLOWED_ORIGINS=${RAILWAY_STATIC_URL},${RAILWAY_PUBLIC_DOMAIN}
+    volumes:
+      - temp-data:/app/temp
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    environment:
+      - VITE_SUPABASE_URL=${SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - VITE_API_URL=${RAILWAY_SERVICE_FASTAPI_BACKEND_URL}
+
+volumes:
+  temp-data:

@@ -1,0 +1,31 @@
+
+# Development files
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+*.log
+
+# Build directories
+dist
+build
+coverage
+
+# IDE specific files
+.idea
+.vscode
+*.swp
+*.swo
+
+# Test files
+__tests__
+test
+tests
+*.test.*
+*.spec.*
+
+# Documentation
+docs
+*.md
