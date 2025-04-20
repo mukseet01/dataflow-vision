@@ -1,8 +1,7 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, Check, FileText, LucideIcon, SparklesIcon } from "lucide-react";
+import { BarChart3, Check, FileText, LucideIcon, SparklesIcon, Zap } from "lucide-react";
 
 // Feature component
 interface FeatureProps {
@@ -90,29 +89,30 @@ const Landing = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section with new animations */}
       <section className="py-20 px-4 md:px-6 lg:py-32 bg-gradient-to-b from-background to-secondary/40">
         <div className="container flex flex-col items-center text-center space-y-8 md:space-y-12">
-          <div className="space-y-4 max-w-3xl">
+          <div className="space-y-4 max-w-3xl animate-fade-in">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              AI-Powered Data Entry &<br />Analysis Platform
+              Lightning-Fast Data Entry &<br />
+              <span className="text-primary animate-slide-in">Precise Analysis</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Automate your data entry processes and unlock powerful insights with our AI-driven data analysis platform.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
+              Experience unmatched speed and accuracy with our AI-driven data analysis platform.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 animate-fade-in">
             <Link to="/register">
-              <Button size="lg" className="gap-2">
-                <SparklesIcon className="h-5 w-5" />
-                Get Started for Free
+              <Button size="lg" className="gap-2 hover:scale-105 transition-transform">
+                <Zap className="h-5 w-5 animate-pulse" />
+                Start Now
               </Button>
             </Link>
-            <Button size="lg" variant="outline">
+            <Button size="lg" variant="outline" className="hover:scale-105 transition-transform">
               Request a Demo
             </Button>
           </div>
-          <div className="w-full max-w-5xl overflow-hidden rounded-xl border shadow-2xl">
+          <div className="w-full max-w-5xl overflow-hidden rounded-xl border shadow-2xl transition-all hover:shadow-primary/20 animate-fade-in">
             <img
               src="https://placehold.co/1200x700/e2f3ff/333333?text=DataSplend+Dashboard"
               alt="DataSplend Dashboard"
@@ -122,33 +122,39 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section with animations */}
       <section id="features" className="py-20 px-4 md:px-6">
         <div className="container space-y-12">
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-4 animate-fade-in">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Powerful Features to Transform Your Data Workflow
+              Lightning-Fast Features for Your Workflow
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Our platform offers everything you need to automate data entry and gain valuable insights.
+              Experience the perfect blend of speed and precision.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Feature
-              icon={FileText}
-              title="AI Data Extraction"
-              description="Automatically extract data from documents, forms, and images with high accuracy using our advanced AI algorithms."
-            />
-            <Feature
-              icon={SparklesIcon}
-              title="Smart Data Processing"
-              description="Process and clean your data with intelligent automation that learns from your corrections and improves over time."
-            />
-            <Feature
-              icon={BarChart3}
-              title="Advanced Analytics"
-              description="Generate insightful reports and visualizations to help you make data-driven decisions for your business."
-            />
+            <div className="animate-fade-in [animation-delay:200ms]">
+              <Feature
+                icon={Zap}
+                title="Instant Data Extraction"
+                description="Extract data from documents in seconds with our advanced AI algorithms."
+              />
+            </div>
+            <div className="animate-fade-in [animation-delay:400ms]">
+              <Feature
+                icon={SparklesIcon}
+                title="Precision Processing"
+                description="Get accurate results with our intelligent data processing system."
+              />
+            </div>
+            <div className="animate-fade-in [animation-delay:600ms]">
+              <Feature
+                icon={BarChart3}
+                title="Real-time Analytics"
+                description="Generate instant insights from your data for quick decision making."
+              />
+            </div>
           </div>
         </div>
       </section>

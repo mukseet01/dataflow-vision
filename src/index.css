@@ -93,4 +93,36 @@
   .data-card {
     @apply bg-white shadow-md rounded-lg border border-border p-6 transition-all hover:shadow-lg dark:bg-card;
   }
+
+  /* Enhanced animations */
+  @keyframes slide-in {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+  }
+
+  [animation-delay="200ms"] {
+    animation-delay: 200ms;
+  }
+
+  [animation-delay="400ms"] {
+    animation-delay: 400ms;
+  }
+
+  [animation-delay="600ms"] {
+    animation-delay: 600ms;
+  }
 }
