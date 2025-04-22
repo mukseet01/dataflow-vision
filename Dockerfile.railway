@@ -35,13 +35,16 @@ COPY --from=builder /app/package*.json ./
 # Install production dependencies only
 RUN npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev
 
+# Create a simple HTML health check file
+RUN echo '<!DOCTYPE html><html><head><title>Health Check</title></head><body>OK</body></html>' > /app/dist/health.html
+
 # Create health check endpoint
 RUN echo '#!/bin/sh\nnode -e "const http=require(\"http\");const server=http.createServer((req,res)=>{if(req.url===\"/health\"){res.writeHead(200);res.end(\"OK\");}else{res.writeHead(404);res.end();}});server.listen(3001,()=>{console.log(\"Health check server running on 3001\");});"' > /app/healthcheck.js \
     && chmod +x /app/healthcheck.js
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://localhost:3000/ || exit 1
 
 # Install serve for running the built application
 RUN npm install -g serve

@@ -15,4 +15,12 @@ const Index = () => {
   return <Landing />;
 };
 
+// Support root-level health checks
+export function GET(req: Request) {
+  if (req.url.includes('health')) {
+    return new Response('OK', { status: 200 });
+  }
+  return new Response();
+}
+
 export default Index;
