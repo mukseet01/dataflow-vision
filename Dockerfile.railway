@@ -5,47 +5,47 @@ FROM node:18-alpine as builder
 # Set working directory
 WORKDIR /app
 
-# Install curl for healthchecks
+# Install curl and healthcheck tools
 RUN apk --no-cache add curl wget
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with better error handling
-RUN npm ci || (echo "npm ci failed" && cat npm-debug.log* && exit 1)
+# Install dependencies with better error handling and logging
+RUN npm ci --no-audit --no-fund || (echo "npm ci failed, retrying with npm install" && npm install)
 
 # Copy project files
 COPY . .
 
-# Build the application with error handling
-RUN npm run build || (echo "Build failed" && exit 1)
+# Build the application with error reporting
+RUN npm run build || (echo "Build failed with the following errors:" && cat /app/npm-debug.log* 2>/dev/null && exit 1)
 
 # Production image
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Install curl and wget for healthchecks
+# Install needed tools
 RUN apk --no-cache add curl wget
 
 # Copy built assets from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 
-# Install production dependencies only with better error handling
-RUN npm ci --production || (echo "npm ci --production failed" && exit 1)
+# Install production dependencies only
+RUN npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev
 
 # Create health check endpoint
 RUN echo '#!/bin/sh\nnode -e "const http=require(\"http\");const server=http.createServer((req,res)=>{if(req.url===\"/health\"){res.writeHead(200);res.end(\"OK\");}else{res.writeHead(404);res.end();}});server.listen(3001,()=>{console.log(\"Health check server running on 3001\");});"' > /app/healthcheck.js \
     && chmod +x /app/healthcheck.js
 
-# Add more robust healthcheck with longer timeouts
-HEALTHCHECK --interval=60s --timeout=30s --start-period=40s --retries=5 \
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
 
 # Expose ports
 EXPOSE 3000
 EXPOSE 3001
 
-# Start the application with improved error handling and logging
-CMD ["sh", "-c", "node /app/healthcheck.js & echo 'Starting application...' && npm run start || (echo 'Application failed to start' && cat npm-debug.log* 2>/dev/null && cat /app/logs/*.log 2>/dev/null || echo 'No logs found')"]
+# Start the application
+CMD ["sh", "-c", "node /app/healthcheck.js & npm run start"]
