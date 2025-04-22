@@ -7,17 +7,18 @@ dockerfilePath = "Dockerfile.railway"
 startCommand = "serve -s dist -l 3000"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-healthcheckPath = "/"
-healthcheckTimeout = 60
+healthcheckPath = "/health.html"
+healthcheckTimeout = 120
 healthcheckInterval = 60
-healthcheckStartPeriod = 30
+healthcheckStartPeriod = 60
 
 [[services]]
 name = "frontend"
 dockerfile = "Dockerfile.frontend"
-healthcheckPath = "/"
-healthcheckTimeout = 60
-healthcheckStartPeriod = 30
+healthcheckPath = "/health.html"
+healthcheckTimeout = 120
+healthcheckInterval = 60
+healthcheckStartPeriod = 60
 routes = [
     { path = "/*", service = "frontend" }
 ]
@@ -26,8 +27,9 @@ routes = [
 name = "backend"
 dockerfile = "python_backend/Dockerfile"
 healthcheckPath = "/api/health"
-healthcheckTimeout = 60
-healthcheckStartPeriod = 30
+healthcheckTimeout = 120
+healthcheckInterval = 60
+healthcheckStartPeriod = 60
 routes = [
     { path = "/api/*", service = "backend" }
 ]

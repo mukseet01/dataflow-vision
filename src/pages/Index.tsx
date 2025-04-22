@@ -8,19 +8,20 @@ const Index = () => {
 
   // Redirect to the landing page
   useEffect(() => {
+    // Don't redirect if this is a health check
+    if (window.location.pathname === "/" && window.location.search.includes("health")) {
+      return;
+    }
     navigate("/", { replace: true });
   }, [navigate]);
+
+  // For health checks, render a simple div
+  if (window.location.search.includes("health")) {
+    return <div id="health-check">OK</div>;
+  }
 
   // Return the Landing component directly
   return <Landing />;
 };
-
-// Support root-level health checks
-export function GET(req: Request) {
-  if (req.url.includes('health')) {
-    return new Response('OK', { status: 200 });
-  }
-  return new Response();
-}
 
 export default Index;
