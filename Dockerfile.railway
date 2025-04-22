@@ -43,9 +43,12 @@ RUN echo '#!/bin/sh\nnode -e "const http=require(\"http\");const server=http.cre
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
 
+# Install serve for running the built application
+RUN npm install -g serve
+
 # Expose ports
 EXPOSE 3000
 EXPOSE 3001
 
-# Start the application
-CMD ["sh", "-c", "node /app/healthcheck.js & npm run start"]
+# Start the application with serve instead of npm run start
+CMD ["sh", "-c", "node /app/healthcheck.js & serve -s dist -l 3000"]
