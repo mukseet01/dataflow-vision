@@ -26,7 +26,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Download spaCy model
-RUN python -m spacy download en_core_web_sm || echo "SpaCy model download may have failed, will try again at runtime"
+RUN python3 -m spacy download en_core_web_sm || echo "SpaCy model download may have failed, will try again at runtime"
 
 # Copy application code
 COPY . .
@@ -45,5 +45,5 @@ ENV MAX_WORKERS=2
 ENV LOG_LEVEL=info
 ENV ALLOWED_ORIGINS="*"
 
-# Command to run the application - using python -m to ensure module is found in PATH
-CMD python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Command to run the application - using python3 explicitly
+CMD python3 -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
