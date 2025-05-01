@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import os
@@ -18,6 +19,15 @@ from config.settings import FILE_SIZE_LIMITS, MAX_ROWS_PER_SHEET
 app = FastAPI(title="Document Processing API", 
               description="API for OCR, NER, and data analysis of various document types")
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for now
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.post("/process", response_model=ProcessingResponse)
 async def process_document(file_request: FileRequest, background_tasks: BackgroundTasks):
     """Process document and extract text and entities."""
@@ -33,6 +43,13 @@ async def export_analysis(export_request: ExportRequest, background_tasks: Backg
     """Export analysis data to various document formats."""
     return await generate_export(export_request, background_tasks)
 
+# Root endpoint for health checks - Railway expects this
+@app.get("/")
+def root_health_check():
+    """Root health check endpoint."""
+    return {"status": "ok"}
+
+# Health check endpoint at /health
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
@@ -69,6 +86,12 @@ def health_check():
         "packages": packages
     }
 
+# API health check endpoint
+@app.get("/api/health")
+def api_health_check():
+    """API health check endpoint."""
+    return {"status": "ok"}
+
 @app.on_event("startup")
 async def startup_event():
     """Run on startup."""
@@ -86,4 +109,5 @@ def shutdown_event():
         print(f"Error cleaning up temp directory: {str(e)}")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
