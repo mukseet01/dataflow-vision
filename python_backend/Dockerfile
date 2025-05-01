@@ -20,8 +20,9 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install dependencies with retry mechanism
+# Install dependencies with retry mechanism and explicit uvicorn install
 RUN pip install --upgrade pip && \
+    pip install --no-cache-dir uvicorn && \
     pip install --no-cache-dir -r requirements.txt
 
 # Download spaCy model
@@ -44,5 +45,5 @@ ENV MAX_WORKERS=2
 ENV LOG_LEVEL=info
 ENV ALLOWED_ORIGINS="*"
 
-# Command to run the application - binding to 0.0.0.0 and using PORT env variable
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Command to run the application - using python -m to ensure module is found in PATH
+CMD python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
