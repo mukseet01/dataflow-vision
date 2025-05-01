@@ -6,17 +6,20 @@ import Landing from "./Landing";
 const Index = () => {
   const navigate = useNavigate();
 
-  // Redirect to the landing page
+  // Check if this is a health check request
+  const isHealthCheck = window.location.pathname === "/health" || 
+                         window.location.pathname === "/health.html" ||
+                         window.location.search.includes("health");
+
+  // Only redirect if not a health check
   useEffect(() => {
-    // Don't redirect if this is a health check
-    if (window.location.pathname === "/" && window.location.search.includes("health")) {
-      return;
+    if (!isHealthCheck && window.location.pathname === "/") {
+      navigate("/", { replace: true });
     }
-    navigate("/", { replace: true });
-  }, [navigate]);
+  }, [navigate, isHealthCheck]);
 
   // For health checks, render a simple div
-  if (window.location.search.includes("health")) {
+  if (isHealthCheck) {
     return <div id="health-check">OK</div>;
   }
 

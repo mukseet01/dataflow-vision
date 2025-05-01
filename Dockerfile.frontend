@@ -20,18 +20,20 @@ COPY . .
 # Build the application with error reporting
 RUN npm run build || (echo "Build failed" && exit 1)
 
+# Create a dedicated health check endpoint
+RUN mkdir -p /app/dist && \
+    echo '<!DOCTYPE html><html><head><title>Health Check</title></head><body>OK</body></html>' > /app/dist/health.html && \
+    echo '<!DOCTYPE html><html><head><title>Health Check</title></head><body>OK</body></html>' > /app/dist/health
+
 # Install serve to serve static files
 RUN npm install -g serve
 
-# Create a dedicated health check HTML file
-RUN mkdir -p /app/dist && echo '<!DOCTYPE html><html><head><title>Health Check</title></head><body>OK</body></html>' > /app/dist/health.html
-
 # Add healthcheck with shorter intervals for faster detection
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q --spider http://localhost:3000/health.html || exit 1
+  CMD wget -q --spider http://localhost:${PORT:-3000}/health || exit 1
 
 # Expose port for the frontend
-EXPOSE 3000
+EXPOSE ${PORT:-3000}
 
 # Command to run the application using serve
-CMD ["serve", "-s", "dist", "-l", "3000"]
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-3000}"]
