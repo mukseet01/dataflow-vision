@@ -21,15 +21,15 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install dependencies with more verbose output and explicit error handling
-RUN pip3 install --upgrade pip && \
-    pip3 install --no-cache-dir uvicorn && \
-    pip3 install --no-cache-dir -r requirements.txt && \
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir uvicorn && \
+    pip install --no-cache-dir -r requirements.txt && \
     echo "Python packages installed successfully"
 
 # Download spaCy model with better error handling
-RUN python3 -m spacy download en_core_web_sm || \
+RUN python -m spacy download en_core_web_sm || \
     (echo "SpaCy model download failed, will retry" && \
-    python3 -m spacy download en_core_web_sm || \
+    python -m spacy download en_core_web_sm || \
     echo "SpaCy model download may have failed, will try again at runtime")
 
 # Copy application code
@@ -45,15 +45,14 @@ EXPOSE ${PORT:-8000}
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV TEMP_DIR=/app/temp
-ENV MAX_WORKERS=2
+ENV MAX_WORKERS=1
 ENV LOG_LEVEL=info
 ENV ALLOWED_ORIGINS="*"
-ENV PATH="/usr/local/bin:${PATH}"
 
 # Add debugging information about Python installation
-RUN which python3
-RUN python3 --version
+RUN which python
+RUN python --version
 RUN echo "Python path: $PATH"
 
-# Command to run the application - using explicit path
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}", "--workers", "1"]
+# Command to run the application - using python without the version number
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}", "--workers", "1"]
