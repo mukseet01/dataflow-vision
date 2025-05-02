@@ -28,8 +28,8 @@ RUN mkdir -p /app/dist && \
 # Install serve to serve static files
 RUN npm install -g serve
 
-# Add healthcheck with shorter intervals for faster detection
-HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+# Add healthcheck with longer intervals and timeout for slower startup
+HEALTHCHECK --interval=60s --timeout=180s --start-period=60s --retries=3 \
   CMD wget -q --spider http://localhost:${PORT:-3000}/health || exit 1
 
 # Expose port for the frontend

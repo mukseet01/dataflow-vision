@@ -21,9 +21,9 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install dependencies with retry mechanism and explicit uvicorn install
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir uvicorn && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --upgrade pip && \
+    pip3 install --no-cache-dir uvicorn && \
+    pip3 install --no-cache-dir -r requirements.txt
 
 # Download spaCy model
 RUN python3 -m spacy download en_core_web_sm || echo "SpaCy model download may have failed, will try again at runtime"
@@ -45,5 +45,8 @@ ENV MAX_WORKERS=2
 ENV LOG_LEVEL=info
 ENV ALLOWED_ORIGINS="*"
 
-# Command to run the application - using python3 explicitly
-CMD python3 -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Add which command to help debug PATH issues
+RUN apt-get update && apt-get install -y which && which python3 && whereis python3
+
+# Command to run the application - using absolute path to Python
+CMD ["/usr/local/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
