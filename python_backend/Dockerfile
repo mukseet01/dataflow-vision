@@ -45,8 +45,9 @@ ENV MAX_WORKERS=2
 ENV LOG_LEVEL=info
 ENV ALLOWED_ORIGINS="*"
 
-# Add which command to help debug PATH issues
-RUN apt-get update && apt-get install -y which && which python3 && whereis python3
+# Add debugging information about Python installation
+RUN which python3
+RUN python3 --version
 
-# Command to run the application - using absolute path to Python
-CMD ["/usr/local/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
+# Command to run the application
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
