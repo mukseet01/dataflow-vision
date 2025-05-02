@@ -98,6 +98,8 @@ async def startup_event():
     print(f"Temporary directory created at: {TEMP_DIR}")
     print(f"File size limits: {FILE_SIZE_LIMITS}")
     print(f"Max rows per sheet: {MAX_ROWS_PER_SHEET}")
+    print(f"Environment: PORT={os.environ.get('PORT', '(not set)')}")
+    print(f"Python executable: {os.sys.executable}")
 
 @app.on_event("shutdown")
 def shutdown_event():

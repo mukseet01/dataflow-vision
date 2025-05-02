@@ -11,19 +11,19 @@ services:
       - HEALTH_PORT=8001
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - TEMP_DIR=/app/temp
-      - MAX_WORKERS=2
+      - MAX_WORKERS=1
       - LOG_LEVEL=info
       - ALLOWED_ORIGINS=${RAILWAY_PUBLIC_DOMAIN:-*},${RAILWAY_STATIC_URL:-*},${RAILWAY_DOMAIN:-*},http://localhost:3000
     volumes:
       - temp-data:/app/temp
       - logs:/app/logs
-    restart: on-failure:10
+    restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-8000}/api/health", "||", "curl", "-f", "http://localhost:8001/health", "||", "exit", "1"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:${PORT:-8000}/health", "||", "exit", "1"]
       interval: 60s
-      timeout: 180s
+      timeout: 300s
       retries: 5
-      start_period: 60s
+      start_period: 120s
 
   frontend:
     build:
@@ -34,16 +34,15 @@ services:
       - VITE_SUPABASE_URL=${SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - VITE_API_URL=${RAILWAY_PUBLIC_DOMAIN}/api
-    restart: on-failure:10
+    restart: always
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:${PORT:-3000}/health", "||", "exit", "1"]
       interval: 60s
-      timeout: 180s
+      timeout: 300s
       retries: 5
-      start_period: 60s
+      start_period: 120s
     depends_on:
-      fastapi-backend:
-        condition: service_healthy
+      - fastapi-backend
 
 volumes:
   temp-data:

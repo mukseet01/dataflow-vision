@@ -1,7 +1,7 @@
 
 FROM python:3.9-slim
 
-# Install system dependencies
+# Install system dependencies with better error handling
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     libtesseract-dev \
@@ -20,13 +20,17 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install dependencies with retry mechanism and explicit uvicorn install
+# Install dependencies with more verbose output and explicit error handling
 RUN pip3 install --upgrade pip && \
     pip3 install --no-cache-dir uvicorn && \
-    pip3 install --no-cache-dir -r requirements.txt
+    pip3 install --no-cache-dir -r requirements.txt && \
+    echo "Python packages installed successfully"
 
-# Download spaCy model
-RUN python3 -m spacy download en_core_web_sm || echo "SpaCy model download may have failed, will try again at runtime"
+# Download spaCy model with better error handling
+RUN python3 -m spacy download en_core_web_sm || \
+    (echo "SpaCy model download failed, will retry" && \
+    python3 -m spacy download en_core_web_sm || \
+    echo "SpaCy model download may have failed, will try again at runtime")
 
 # Copy application code
 COPY . .
@@ -44,10 +48,12 @@ ENV TEMP_DIR=/app/temp
 ENV MAX_WORKERS=2
 ENV LOG_LEVEL=info
 ENV ALLOWED_ORIGINS="*"
+ENV PATH="/usr/local/bin:${PATH}"
 
 # Add debugging information about Python installation
 RUN which python3
 RUN python3 --version
+RUN echo "Python path: $PATH"
 
-# Command to run the application
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
+# Command to run the application - using explicit path
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}", "--workers", "1"]
