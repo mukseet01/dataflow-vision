@@ -33,3 +33,7 @@ docs
 # Temporary files
 **/temp/
 **/tmp/
+
+# Docker related files (now removed from project)
+docker-compose*
+Dockerfile*
