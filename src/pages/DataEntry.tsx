@@ -12,12 +12,7 @@ const DataEntry = () => {
     <MainLayout>
       <div className="p-6 space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Data Entry</h1>
-            <p className="text-muted-foreground">
-              Upload and process data with AI automation
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight">Data Entry</h1>
           <Button>
             <PlusIcon className="mr-2 h-4 w-4" />
             New Template
@@ -27,9 +22,7 @@ const DataEntry = () => {
         <Tabs defaultValue="upload" className="space-y-4">
           <TabsList>
             <TabsTrigger value="upload">Upload Files</TabsTrigger>
-            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="history">Processing History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="space-y-4">
@@ -72,49 +65,17 @@ const DataEntry = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="manual" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Manual Data Entry</CardTitle>
-                <CardDescription>
-                  Create and edit data entries with AI assistance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] flex items-center justify-center border border-dashed rounded-md">
-                  <p className="text-muted-foreground">Manual data entry form will appear here</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="templates" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Data Entry Templates</CardTitle>
-                <CardDescription>
-                  Create and manage custom templates
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] flex items-center justify-center border border-dashed rounded-md">
-                  <p className="text-muted-foreground">Templates management view will appear here</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="history" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Data Entry History</CardTitle>
+                <CardTitle>Processing History</CardTitle>
                 <CardDescription>
-                  View and manage previous data entry sessions
+                  View and manage previous data processing sessions
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px] flex items-center justify-center border border-dashed rounded-md">
-                  <p className="text-muted-foreground">Data entry history will appear here</p>
+                  <p className="text-muted-foreground">Processing history will appear here</p>
                 </div>
               </CardContent>
             </Card>

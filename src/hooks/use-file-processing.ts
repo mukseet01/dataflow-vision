@@ -29,12 +29,12 @@ export const useFileProcessing = () => {
           }
           
           // Process the file with our document processor
-          await processFile(fileData.id);
+          const processingResult = await processFile(fileData.id, fileData);
           
           // Update progress
           onProgress((index + 1) * progressIncrement);
           
-          return fileData;
+          return { fileData, processingResult };
         } catch (error: any) {
           console.error(`Error processing file ${file.name}:`, error);
           toast({

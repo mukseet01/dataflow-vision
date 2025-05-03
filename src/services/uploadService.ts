@@ -54,19 +54,24 @@ export async function uploadFile(file: File) {
   }
 }
 
-export async function processFile(fileId: string) {
+export async function processFile(fileId: string, fileData: any) {
   try {
-    // Call our document processor edge function
-    const { error } = await supabase.functions.invoke('document-processor', {
+    // Call our document processing edge function
+    const { data, error } = await supabase.functions.invoke('document-processing', {
       body: { 
-        action: 'process',
-        fileId 
+        fileId: fileId,
+        fileUrl: fileData.original_path,
+        fileName: fileData.file_name,
+        fileType: fileData.file_type
       }
     });
     
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("Error from document processing function:", error);
+      throw new Error(error.message);
+    }
     
-    return true;
+    return data;
   } catch (error) {
     console.error(`Error processing file with ID ${fileId}:`, error);
     throw error;

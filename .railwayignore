@@ -34,6 +34,5 @@ docs
 **/temp/
 **/tmp/
 
-# Docker related files (now removed from project)
-docker-compose*
-Dockerfile*
+# Python files (since we're using Supabase Edge Functions now)
+python_backend/

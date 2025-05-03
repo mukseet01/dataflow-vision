@@ -1,5 +1,5 @@
 
 project_id = "kyufmcbhvmdoupdnjtdj"
 
-[functions.data-analysis]
+[functions.document-processing]
 verify_jwt = true
