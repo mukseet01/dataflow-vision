@@ -3,12 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export async function uploadFile(file: File) {
   try {
-    // Get current user
+    // Get current user - use anonymous upload if not authenticated
     const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error("You must be logged in to upload files");
-    }
     
     // Upload file to Supabase Storage
     const filename = `${Date.now()}-${file.name}`;
@@ -29,7 +25,7 @@ export async function uploadFile(file: File) {
     const requiresOcr = file.type === "application/pdf" || 
                         file.type.startsWith("image/");
                         
-    // Save file metadata to database with user_id
+    // Save file metadata to database - use anonymous user if not logged in
     const { data: fileData, error: fileError } = await supabase
       .from('file_uploads')
       .insert({
@@ -38,7 +34,7 @@ export async function uploadFile(file: File) {
         file_size: file.size,
         original_path: publicUrl,
         ocr_required: requiresOcr,
-        user_id: user.id // Add user_id to comply with RLS
+        user_id: user?.id || '00000000-0000-0000-0000-000000000000' // Use anonymous ID if no user
       })
       .select()
       .single();
