@@ -54,9 +54,5 @@ RUN which python
 RUN python --version
 RUN echo "Python path: $PATH"
 
-# Make sure python is in PATH and executable
-RUN ln -sf /usr/local/bin/python /usr/bin/python
-RUN chmod +x /usr/local/bin/python
-
-# Command to run the application with explicit path
-CMD ["/usr/local/bin/python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}", "--workers", "1"]
+# Command to run the application - using the system python
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}", "--workers", "1"]
