@@ -8,6 +8,7 @@ import tempfile
 import time
 from typing import List, Optional
 import shutil
+import sys
 
 from models.schemas import FileRequest, ProcessingResponse, AnalysisRequest, AnalysisResponse, ExportRequest, ExportResponse
 from services.document_processor import process_document_handler
@@ -47,7 +48,7 @@ async def export_analysis(export_request: ExportRequest, background_tasks: Backg
 @app.get("/")
 def root_health_check():
     """Root health check endpoint."""
-    return {"status": "ok"}
+    return {"status": "ok", "python_path": sys.executable, "python_version": sys.version}
 
 # Health check endpoint at /health
 @app.get("/health")
@@ -80,10 +81,19 @@ def health_check():
         packages["tesseract"] = pytesseract.get_tesseract_version()
     except:
         packages["tesseract"] = "failed to load"
+    
+    system_info = {
+        "python_executable": sys.executable,
+        "python_version": sys.version,
+        "environment_vars": {k: v for k, v in os.environ.items() if k.startswith(("PYTHON", "PATH"))},
+        "current_dir": os.getcwd(),
+        "files_in_dir": os.listdir(),
+    }
         
     return {
         "status": "healthy", 
-        "packages": packages
+        "packages": packages,
+        "system_info": system_info
     }
 
 # API health check endpoint
@@ -95,11 +105,15 @@ def api_health_check():
 @app.on_event("startup")
 async def startup_event():
     """Run on startup."""
+    print(f"Python executable: {sys.executable}")
+    print(f"Python version: {sys.version}")
+    print(f"Python path: {sys.path}")
     print(f"Temporary directory created at: {TEMP_DIR}")
     print(f"File size limits: {FILE_SIZE_LIMITS}")
     print(f"Max rows per sheet: {MAX_ROWS_PER_SHEET}")
     print(f"Environment: PORT={os.environ.get('PORT', '(not set)')}")
-    print(f"Python executable: {os.sys.executable}")
+    print(f"Current directory: {os.getcwd()}")
+    print(f"Directory contents: {os.listdir()}")
 
 @app.on_event("shutdown")
 def shutdown_event():
