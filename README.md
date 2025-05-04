@@ -1,73 +1,46 @@
-# Welcome to your Lovable project
 
-## Project info
+# Document Processing Application
 
-**URL**: https://lovable.dev/projects/c3908175-853d-4620-9370-943d8047cd28
+This fullstack application is designed to process documents using FastAPI and React. It's structured to be easily deployable on Replit for development and testing.
 
-## How can I edit this code?
+## Project Structure
 
-There are several ways of editing your application.
+### Frontend (React + TypeScript)
+- `src/components/data-entry/`: Components for data entry and file upload
+- `src/services/uploadService.ts`: Service for communicating with the FastAPI backend
+- `src/hooks/`: Custom React hooks including file upload and processing logic
 
-**Use Lovable**
+### Backend (FastAPI)
+- `fastapi_backend.py`: Main FastAPI application with document processing endpoints
+- `fastapi_requirements.txt`: Python dependencies for the FastAPI backend
+- `python_backend/`: More comprehensive backend code with additional processing capabilities
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c3908175-853d-4620-9370-943d8047cd28) and start prompting.
+## Setting Up on Replit
 
-Changes made via Lovable will be committed automatically to this repo.
+This project is designed to be run on two separate Replit instances:
+- One for the FastAPI backend
+- One for the React frontend
 
-**Use your preferred IDE**
+Please refer to `FASTAPI_REPLIT_SETUP.md` for detailed instructions on setting up both parts on Replit.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- File upload and validation
+- Document text extraction
+- Entity recognition (emails, dates, phone numbers, etc.)
+- Structured data processing (CSV, Excel)
+- Language detection
+- Data visualization and export
 
-Follow these steps:
+## Development
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Set up the backend and frontend on separate Replit instances as described in the setup guide
+2. Update the `FASTAPI_BACKEND_URL` in `src/services/uploadService.ts` to point to your backend Repl
+3. Test the integration using the data entry page
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Todo
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c3908175-853d-4620-9370-943d8047cd28) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Implement OCR for PDF and image files
+- Add authentication
+- Improve entity extraction with machine learning models
+- Add more export formats
