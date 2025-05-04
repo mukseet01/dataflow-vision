@@ -10,41 +10,57 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { fileUrl, fileName, fileType, fileId } = await req.json()
+    const reqBody = await req.json();
+    const { fileId, fileUrl, fileName, fileType } = reqBody;
+    
+    console.log(`Received processing request for file: ${fileName} (${fileType})`);
     
     if (!fileUrl || !fileName || !fileType || !fileId) {
+      console.error('Missing required parameters:', reqBody);
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
+        JSON.stringify({ error: 'Missing required parameters', details: reqBody }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
     
     // Create a Supabase client to update the file status
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     
-    console.log(`Starting processing for file: ${fileName} (${fileType})`)
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log(`Starting processing for file: ${fileName} (${fileType}) with ID: ${fileId}`);
     
     try {
       // Update file status to processing
-      await supabase
+      const { error: updateError } = await supabase
         .from('file_uploads')
         .update({ status: 'processing' })
-        .eq('id', fileId)
+        .eq('id', fileId);
+        
+      if (updateError) {
+        console.error('Error updating file status:', updateError);
+      }
     } catch (error) {
-      console.error('Error updating file status:', error)
+      console.error('Error updating file status:', error);
       // Continue processing even if status update fails
     }
       
     // Simulate document processing - in a real implementation, this would 
     // extract text, entities, etc. using libraries or external services
-    const extractedText = `Sample extracted text from ${fileName}`
+    const extractedText = `Sample extracted text from ${fileName}`;
     const extractedEntities = { 
       names: ['John Doe', 'Jane Smith'],
       dates: ['2025-05-03'],
       amounts: ['$1,234.56']
-    }
+    };
     
     // Create a structured data representation
     const dataFrame = {
@@ -60,7 +76,7 @@ Deno.serve(async (req) => {
       }],
       total_rows: 2,
       sheet_count: 1
-    }
+    };
     
     // Store the extracted data
     try {
@@ -73,11 +89,11 @@ Deno.serve(async (req) => {
           data_frame: dataFrame
         })
         .select()
-        .single()
+        .single();
       
       if (extractionError) {
-        console.error('Error inserting extracted data:', extractionError)
-        throw extractionError
+        console.error('Error inserting extracted data:', extractionError);
+        throw extractionError;
       }
       
       // Extract entities to the entities table for better querying
@@ -91,17 +107,12 @@ Deno.serve(async (req) => {
               entity_value: value,
               confidence: 0.95 // Mock confidence score
             })
-            .catch(err => console.error('Error inserting entity:', err))
+            .catch(err => console.error('Error inserting entity:', err));
         }
       }
-    } catch (error) {
-      console.error('Error processing extraction data:', error)
-      // Continue to update status even if extraction fails
-    }
-    
-    // Update file status to completed
-    try {
-      await supabase
+      
+      // Update file status to completed
+      const { error: completeError } = await supabase
         .from('file_uploads')
         .update({ 
           status: 'completed',
@@ -112,28 +123,44 @@ Deno.serve(async (req) => {
             processing_timestamp: new Date().toISOString()
           }
         })
-        .eq('id', fileId)
+        .eq('id', fileId);
+        
+      if (completeError) {
+        console.error('Error updating file status to completed:', completeError);
+      }
+      
+      console.log(`Processing completed for file: ${fileName}`);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          fileId,
+          extractedText,
+          extractedEntities,
+          dataFrame
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     } catch (error) {
-      console.error('Error updating file status to completed:', error)
+      console.error('Error processing extraction data:', error);
+      
+      // Update file status to failed
+      await supabase
+        .from('file_uploads')
+        .update({ status: 'failed' })
+        .eq('id', fileId)
+        .catch(err => console.error('Error updating file status to failed:', err));
+      
+      return new Response(
+        JSON.stringify({ error: 'Data extraction failed', details: error.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
-    
-    console.log(`Processing completed for file: ${fileName}`)
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        fileId,
-        extractedText,
-        extractedEntities,
-        dataFrame
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
   } catch (error) {
-    console.error('Error processing document:', error)
+    console.error('Error processing document:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
-})
+});

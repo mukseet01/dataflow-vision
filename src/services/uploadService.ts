@@ -13,7 +13,7 @@ export async function uploadFile(file: File) {
       .upload(filename, file);
 
     if (uploadError) {
-      throw new Error(uploadError.message);
+      throw new Error(`File upload error: ${uploadError.message}`);
     }
 
     // Get the public URL
@@ -34,15 +34,17 @@ export async function uploadFile(file: File) {
         file_size: file.size,
         original_path: publicUrl,
         ocr_required: requiresOcr,
-        user_id: user?.id || '00000000-0000-0000-0000-000000000000' // Use anonymous ID if no user
+        user_id: user?.id || '00000000-0000-0000-0000-000000000000', // Use anonymous ID if no user
+        status: 'pending'
       })
       .select()
       .single();
 
     if (fileError) {
-      throw new Error(fileError.message);
+      throw new Error(`Database error: ${fileError.message}`);
     }
 
+    console.log("File uploaded successfully:", fileData);
     return fileData;
   } catch (error) {
     console.error("Error uploading file:", error);
@@ -52,10 +54,12 @@ export async function uploadFile(file: File) {
 
 export async function processFile(fileId: string, fileData: any) {
   try {
+    console.log("Processing file with ID:", fileId);
+    
     // Call our document processing edge function
     const { data, error } = await supabase.functions.invoke('document-processing', {
       body: { 
-        fileId: fileId,
+        fileId,
         fileUrl: fileData.original_path,
         fileName: fileData.file_name,
         fileType: fileData.file_type
@@ -64,9 +68,10 @@ export async function processFile(fileId: string, fileData: any) {
     
     if (error) {
       console.error("Error from document processing function:", error);
-      throw new Error(error.message);
+      throw new Error(`Processing error: ${error.message}`);
     }
     
+    console.log("Processing completed successfully:", data);
     return data;
   } catch (error) {
     console.error(`Error processing file with ID ${fileId}:`, error);
