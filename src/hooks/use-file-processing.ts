@@ -33,7 +33,7 @@ export const useFileProcessing = () => {
           
           console.log(`File uploaded successfully: ${file.name}, ID: ${fileData.id}`);
           
-          // Process the file with our document processor
+          // Process the file with our FastAPI backend
           const processingResult = await processFile(fileData.id, fileData);
           console.log(`Processing result for ${file.name}:`, processingResult);
           
