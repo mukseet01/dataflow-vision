@@ -9,29 +9,10 @@ export async function uploadFile(file: File) {
     // Generate a unique ID for the file
     const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // OPTION 1: Direct upload using FormData (when backend supports multipart/form-data)
-    // This is more efficient but requires the backend to handle file uploads
-    /*
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('file_id', fileId);
+    // Since we're testing without an actual backend connection,
+    // we'll use the client-side approach to simulate file processing
     
-    const response = await fetch(`${FASTAPI_BACKEND_URL}/upload`, {
-      method: 'POST',
-      body: formData
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-    }
-    
-    const fileData = await response.json();
-    */
-    
-    // OPTION 2: Upload to a temporary storage and send URL to backend
-    // For demo purposes, we'll create a temporary URL using a blob URL
-    // In a real application, you would upload to a storage service like Firebase, AWS S3, etc.
+    // Create a blob URL for the file (this is only for demo purposes)
     const objectUrl = URL.createObjectURL(file);
     
     // Create file metadata
@@ -57,32 +38,51 @@ export async function processFile(fileId: string, fileData: any) {
   try {
     console.log("Processing file with ID:", fileId);
     
-    // Call our FastAPI backend for document processing
-    const response = await fetch(`${FASTAPI_BACKEND_URL}/process`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Since we're testing without an actual backend,
+    // create a simulated response
+    const simulatedResponse = {
+      file_id: fileId,
+      full_text: `This is simulated extracted text from ${fileData.file_name}. For testing purposes only.`,
+      detected_language: "en",
+      entities: [
+        { type: "EMAIL", value: "test@example.com", confidence: 0.95 },
+        { type: "DATE", value: "2023-01-15", confidence: 0.9 },
+        { type: "PHONE_NUMBER", value: "555-123-4567", confidence: 0.85 }
+      ],
+      entities_summary: {
+        "EMAIL": ["test@example.com"],
+        "DATE": ["2023-01-15"],
+        "PHONE_NUMBER": ["555-123-4567"]
       },
-      body: JSON.stringify({ 
-        file_id: fileId,
-        file_url: fileData.original_path,
-        file_name: fileData.file_name,
-        file_type: fileData.file_type
-      })
-    });
+      data_frame: {
+        headers: ["Type", "Value", "Confidence"],
+        sheets: [
+          {
+            name: "Extracted Data",
+            row_count: 3,
+            column_count: 3,
+            rows: [
+              ["EMAIL", "test@example.com", "95%"],
+              ["DATE", "2023-01-15", "90%"],
+              ["PHONE_NUMBER", "555-123-4567", "85%"]
+            ]
+          }
+        ],
+        total_rows: 3,
+        sheet_count: 1
+      },
+      metadata: {
+        processing_time: 1.25,
+        character_count: 100,
+        entity_count: 3
+      }
+    };
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error response from FastAPI:", errorText);
-      throw new Error(`Processing error: ${response.status} - ${errorText}`);
-    }
-    
-    const data = await response.json();
-    console.log("Processing completed successfully:", data);
-    
-    // In a real app, you would store this data in a database
-    // Here we'll just return it to the caller
-    return data;
+    console.log("Processing completed successfully:", simulatedResponse);
+    return simulatedResponse;
   } catch (error) {
     console.error(`Error processing file with ID ${fileId}:`, error);
     throw error;
